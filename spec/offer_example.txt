@@ -1,0 +1,48 @@
+{
+  "id": 42,
+  "vendorId": 17,
+
+  "locationName": "Downtown branch",
+  "chainName": "Starbucks",
+  "website": "https://starbucks.com",
+  "vendorImageUrl": "https://.../vendors/uploads/vendors/abc.jpeg",
+
+  "name": "Surprise pastry box",
+  "description": "Assorted pastries from today",
+  "price": 4.99,
+  "originalPrice": 12.0,
+  "quantityAvailable": 3,
+  "originalQuantity": 10,
+
+  "dietaryInfo": "vegetarian",
+  "allergenInfo": "contains gluten",
+  "imageUrl": "https://.../vendors/uploads/offers/xyz.jpeg",
+
+  "rating": 4.6,
+  "reviewsCount": 128,
+
+  "expirationDate": "2026-04-23T20:00:00+02:00",
+  "active": true,
+  "createdAt": "2026-04-23T09:15:00+02:00",
+
+  "address": "Some street 12, Belgrade",
+  "zipCode": "11000",
+  "latitude": 44.7145865,
+  "longitude": 20.3678456,
+
+  "currency": "RSD",
+  "businessType": "Bakery",
+  "category": "MEALS",
+
+  "pickupDate": "2026-04-23",
+  "pickupStartTime": "17:00:00",
+  "pickupEndTime": "19:00:00",
+
+  "pickupDaySlot": "TODAY",
+  "pickupMealSlot": "DINNER",
+  "collectNow": true,
+
+  "expired": false,
+  "soldOut": false,
+  "greyedOut": false
+}

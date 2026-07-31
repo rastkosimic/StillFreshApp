@@ -1,0 +1,144 @@
+{
+  "project": "StillFresh",
+  "description": "AI image-generation brief for app icon and logo assets. Use the approved scalloped plate-clock reference image as style anchor in every generation.",
+  "referenceImage": {
+    "description": "Scalloped ceramic plate clock: glossy cream face, thick wavy forest-green rim, red minute hand at 12, orange hour hand at 10, orange center cap, small green tick marks. Playful minimalist 3D product render.",
+    "notes": "Attach the approved reference PNG to every generation request."
+  },
+  "brandColors": {
+    "creamFace": "#F7FBF9",
+    "canvasBackground": "#F4F4F2",
+    "splashBackground": "#F7FBF9",
+    "forestGreen": "#2C5F2E",
+    "redHand": "#E53935",
+    "orangeHand": "#F5A623",
+    "notificationGlyph": "#FFFFFF"
+  },
+  "consistencyRules": [
+    "Signature shape: scalloped/wavy circular plate silhouette — never replace with a plain circle",
+    "Face: glossy cream ceramic, not flat beige",
+    "Rim: thick wavy forest green (#2C5F2E) following scalloped edge",
+    "Hands: red minute hand (longer, to 12), orange hour hand (shorter, ~10), orange center dot",
+    "Mood: playful, fresh, trustworthy food-tech — not corporate bank, not grocery flyer photography",
+    "Never add text on icon assets (no StillFresh wordmark on app icons)",
+    "Never add realistic food, people, or utensils",
+    "Small assets (favicon, notification): simplify tick marks and use bolder shapes"
+  ],
+  "globalNegativePrompt": "blurry, noisy, watermark, text, wordmark, tagline, photorealistic food, human hands, broken symmetry, thin rim, flat clip art, busy background, realistic plate of food, utensils, drop shadow on entire square, low resolution, jpeg artifacts, gradient banding",
+  "assets": [
+    {
+      "id": "icon",
+      "outputFile": "assets/icon.png",
+      "expoUsage": "app.json icon, expo-notifications plugin icon",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "transparentBackground": false,
+      "prompt": "Square app icon, exactly 1024x1024 pixels, for a food-rescue mobile app called StillFresh. Center a single brand mark matching the reference image: a round scalloped ceramic plate clock viewed straight-on (top-down), with a glossy cream off-white face (#F7FBF9), a thick wavy forest-green rim (#2C5F2E) following the scalloped edge, 12 small dark-green tick marks around the face, a bold red minute hand pointing to 12 o'clock (#E53935), a shorter rounded orange hour hand pointing to 10 o'clock (#F5A623), and a small orange center cap. Style: clean 3D product render, soft studio lighting from top-left, subtle shadow under the plate, minimalist and friendly. Background: solid forest green (#2C5F2E) filling the full square. Keep the plate large but inside a safe margin (~10% padding) so corners are not clipped on phones. No text, no wordmark, no extra decorations.",
+      "negativePrompt": "transparent background, white background, text, watermark, realistic food photography, thin hands, square mask baked in, rounded app-store corners in image"
+    },
+    {
+      "id": "splash-icon",
+      "outputFile": "assets/splash-icon.png",
+      "expoUsage": "app.json splash.image (resizeMode: contain, backgroundColor: #F7FBF9)",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "transparentBackground": true,
+      "prompt": "Splash screen logo, 1024x1024 PNG, transparent background. Center only the scalloped plate clock mark from the reference: cream glossy face (#F7FBF9), forest-green wavy rim (#2C5F2E), red minute hand at 12 (#E53935), orange hour hand at 10 (#F5A623), orange center, green tick marks. Same glossy ceramic 3D style as reference, soft shadow under plate only. No outer colored square, no text. Logo occupies 55-65% of canvas height. Crisp edges, isolated object.",
+      "negativePrompt": "solid background, text StillFresh, busy scene, cropped plate, muddy colors, full-bleed green square"
+    },
+    {
+      "id": "android-icon-foreground",
+      "outputFile": "assets/android-icon-foreground.png",
+      "expoUsage": "app.json android.adaptiveIcon.foregroundImage",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "transparentBackground": true,
+      "prompt": "Android adaptive icon foreground layer, 1024x1024 PNG, transparent background outside the logo. StillFresh scalloped plate clock mark perfectly centered. CRITICAL: entire logo including outer scallops must fit inside the center 66% safe circle (Android crops to circle/squircle). Scale logo to ~75% of canvas to avoid edge clipping. Cream face, green wavy rim #2C5F2E, red and orange clock hands, green ticks, glossy ceramic 3D, soft shadow under plate only. No text. Clean alpha channel.",
+      "negativePrompt": "solid background, logo touching canvas edges, square backdrop, text, extra icons"
+    },
+    {
+      "id": "android-icon-background",
+      "outputFile": "assets/android-icon-background.png",
+      "expoUsage": "app.json android.adaptiveIcon.backgroundImage",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "transparentBackground": false,
+      "prompt": "Android adaptive icon background layer, 1024x1024 PNG. Flat solid forest green fill #2C5F2E edge to edge. Optional: extremely subtle radial vignette (max 5% darker at edges). No logo, no pattern, no texture, no objects.",
+      "negativePrompt": "logo, plate, clock, pattern, photograph, strong gradient, noise",
+      "alternative": {
+        "description": "Softer variant if foreground plate is busy",
+        "prompt": "Flat solid warm off-white #F7FBF9, no objects, seamless fill 1024x1024."
+      }
+    },
+    {
+      "id": "android-icon-monochrome",
+      "outputFile": "assets/android-icon-monochrome.png",
+      "expoUsage": "app.json android.adaptiveIcon.monochromeImage (Android 13+ themed icons)",
+      "width": 1024,
+      "height": 1024,
+      "format": "PNG",
+      "transparentBackground": true,
+      "prompt": "Android monochrome adaptive icon, 1024x1024 PNG, transparent background. Single-color white silhouette (#FFFFFF) of the StillFresh mark: scalloped plate outer shape plus simplified clock hands (minute hand longer, hour hand shorter, small center dot). Optional: 12 tiny dash tick marks only if they stay bold at small size. No shading, no cream fill, no green rim, no red or orange — pure white shape only. Centered inside 66% safe circle. Clean vector-like edges.",
+      "negativePrompt": "multicolor, gray, 3D lighting, texture, cream fill, green rim, text, hairline details"
+    },
+    {
+      "id": "favicon",
+      "outputFile": "assets/favicon.png",
+      "expoUsage": "app.json web.favicon (export at 192x192, usable down to 48x48)",
+      "width": 192,
+      "height": 192,
+      "format": "PNG",
+      "transparentBackground": true,
+      "prompt": "App favicon 192x192 PNG. Extreme simplification of StillFresh logo for tiny size: scalloped circle plate with thick green rim #2C5F2E, cream center, two simple clock hands (red minute, orange hour), tiny orange center dot. Minimal or no tick marks. Flat-to-soft-3D hybrid, high contrast, readable at 16x16. Transparent background. No text.",
+      "negativePrompt": "fine detail, thin hands, photorealism, text, busy scallops, large canvas padding"
+    },
+    {
+      "id": "notification-icon",
+      "outputFile": "assets/notification-icon.png",
+      "expoUsage": "Recommended separate asset for Android status bar (expo-notifications); white glyph on transparent",
+      "width": 96,
+      "height": 96,
+      "format": "PNG",
+      "transparentBackground": true,
+      "prompt": "Android notification icon, 96x96 PNG, transparent background. White silhouette only (#FFFFFF): simplified scalloped plate outline plus two clock hands. Bold strokes, no interior fill, no shading, no color. Must read clearly at status-bar size. Centered, symmetrical, Material Design notification glyph style.",
+      "negativePrompt": "color, gray, 3D, cream, green, red, orange, shadows, text, thin lines"
+    },
+    {
+      "id": "login-wordmark",
+      "outputFile": "assets/login-wordmark.png",
+      "expoUsage": "Optional in-app horizontal lockup for LoginScreen / RoleSelectionScreen",
+      "width": 1024,
+      "height": 256,
+      "format": "PNG",
+      "transparentBackground": true,
+      "optional": true,
+      "prompt": "Horizontal brand lockup for mobile login screen, 1024x256 PNG, transparent background. Left: simplified scalloped plate clock icon (~200px tall), cream face and green rim with red/orange hands. Right: wordmark StillFresh in bold modern sans-serif, color #2C5F2E, tight kerning, no tagline. Clean friendly food-tech aesthetic. Light-background ready (#F4F4F2).",
+      "negativePrompt": "script font, slogan, heavy drop shadows, realistic food, cluttered layout"
+    },
+    {
+      "id": "auth-icon",
+      "outputFile": "assets/auth-icon.png",
+      "expoUsage": "Optional standalone mark above forms on auth screens",
+      "width": 512,
+      "height": 512,
+      "format": "PNG",
+      "transparentBackground": true,
+      "optional": true,
+      "prompt": "Standalone StillFresh brand icon for auth screens, 512x512 PNG, transparent background. Scalloped plate clock matching reference, medium detail (clear hands and rim, subtle ticks), glossy ceramic 3D, centered, occupies ~80% of canvas. Colors: cream #F7FBF9, rim #2C5F2E, red #E53935, orange #F5A623. No text, no square backdrop.",
+      "negativePrompt": "text, wordmark, solid background square, food photography, low contrast"
+    }
+  ],
+  "postProcessing": [
+    "Export all PNGs at exact pixel dimensions listed above",
+    "Verify transparent assets have clean alpha (no gray fringe)",
+    "For icon.png: no transparency — flat #2C5F2E background to edges",
+    "For notification-icon.png: flatten to pure white #FFFFFF silhouette only",
+    "Place finished files in ./assets/ matching outputFile paths",
+    "Consider updating app.json android.adaptiveIcon.backgroundColor from #2ECC71 to #2C5F2E for brand consistency",
+    "Consider pointing expo-notifications plugin to assets/notification-icon.png instead of full-color icon.png"
+  ]
+}

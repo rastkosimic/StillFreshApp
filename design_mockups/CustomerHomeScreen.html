@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=375, maximum-scale=1" />
+  <title>StillFresh — Discover</title>
+  <style>
+    :root {
+      --primary:        #2C5F2E;
+      --primary-50:     #EAF2EA;
+      --primary-100:    #C9E0CA;
+      --primary-200:    #A3C9A5;
+      --accent:         #B8D94A;
+      --accent-dark:    #86A12D;
+      --background:     #F4F4F2;
+      --surface:        #FFFFFF;
+      --text-primary:   #1A1A1A;
+      --text-secondary: #757575;
+      --text-inverse:   #FFFFFF;
+      --border:         #E5E5E5;
+      --error:          #E53935;
+      --rating:         #F5A623;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #555;
+      display: flex;
+      justify-content: center;
+      padding: 24px 0 48px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    /* ── Phone shell ── */
+    .phone {
+      width: 375px;
+      min-height: 812px;
+      background: var(--background);
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      background: var(--background);
+      padding: 14px 24px 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      flex-shrink: 0;
+    }
+    .status-icons { display: flex; gap: 6px; align-items: center; }
+
+    /* ── Location header ── */
+    .header {
+      background: var(--background);
+      padding: 6px 16px 10px;
+      flex-shrink: 0;
+    }
+    .location-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .loc-icon {
+      width: 26px; height: 26px;
+      background: var(--primary-50);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .loc-icon svg { width: 14px; height: 14px; fill: var(--primary); }
+    .loc-texts {}
+    .loc-label { font-size: 11px; color: var(--text-secondary); line-height: 1; }
+    .loc-name {
+      font-size: 15px; font-weight: 700; color: var(--text-primary);
+      display: flex; align-items: center; gap: 4px; margin-top: 1px;
+    }
+    .chevron { font-size: 9px; color: var(--text-secondary); margin-top: 1px; }
+
+    .header-right {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      position: relative;
+    }
+    .icon-btn svg { width: 18px; height: 18px; fill: var(--text-primary); }
+    .notif-dot {
+      position: absolute; top: 5px; right: 5px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--error);
+      border: 2px solid var(--background);
+    }
+
+    /* ── Category filter pills ── */
+    .categories {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      flex-shrink: 0;
+    }
+    .categories::-webkit-scrollbar { display: none; }
+    .pill {
+      flex-shrink: 0;
+      padding: 7px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      border: none;
+      line-height: 1;
+    }
+    .pill.active  { background: var(--primary); color: var(--text-inverse); }
+    .pill.inactive { background: var(--surface); color: var(--text-primary); border: 1.5px solid var(--border); }
+
+    /* ── Thin divider ── */
+    .hairline { height: 1px; background: var(--border); margin: 0 0 2px; flex-shrink: 0; }
+
+    /* ── Scrollable body ── */
+    .scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 76px;
+      scrollbar-width: none;
+    }
+    .scroll::-webkit-scrollbar { display: none; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 4px; }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px 10px;
+    }
+    .section-title-wrap { display: flex; align-items: center; gap: 6px; }
+    .section-icon { font-size: 16px; line-height: 1; }
+    .section-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+    .section-count {
+      font-size: 11px; font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--border);
+      border-radius: 999px;
+      padding: 1px 7px;
+    }
+    .see-all {
+      font-size: 13px; font-weight: 600; color: var(--primary);
+      cursor: pointer; text-decoration: none; flex-shrink: 0;
+    }
+
+    /* ── Horizontal scroll row ── */
+    .h-scroll {
+      display: flex;
+      gap: 12px;
+      padding: 0 16px 14px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .h-scroll::-webkit-scrollbar { display: none; }
+
+    /* ── Offer card (wide — for horiz scroll) ── */
+    .card {
+      background: var(--surface);
+      border-radius: 14px;
+      overflow: hidden;
+      width: 175px;
+      flex-shrink: 0;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.09);
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .card:active { opacity: .85; }
+
+    .card-img {
+      width: 100%;
+      height: 112px;
+      background: var(--primary-100);
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 42px;
+      overflow: hidden;
+    }
+    .card-img img {
+      width: 100%; height: 100%; object-fit: cover;
+      position: absolute; top: 0; left: 0;
+    }
+
+    /* badges on image */
+    .badge {
+      position: absolute;
+      font-size: 11px; font-weight: 700;
+      border-radius: 999px;
+      padding: 3px 8px;
+      line-height: 1.2;
+    }
+    .badge-tl { top: 8px; left: 8px; background: var(--primary); color: var(--text-inverse); }
+    .badge-tl.urgent { background: var(--error); }
+    .badge-tr {
+      top: 8px; right: 8px;
+      background: rgba(255,255,255,0.92);
+      color: var(--text-primary);
+      display: flex; align-items: center; gap: 3px;
+    }
+    .star { color: var(--rating); }
+
+    .card-body { padding: 9px 10px 10px; }
+    .card-vendor { font-size: 12px; color: var(--text-secondary); margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-name { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-meta { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+    .card-footer {
+      display: flex; justify-content: space-between; align-items: center; margin-top: 7px;
+    }
+    .price-row { display: flex; align-items: center; gap: 5px; }
+    .price-orig { font-size: 11px; color: var(--text-secondary); text-decoration: line-through; }
+    .price-disc { font-size: 15px; font-weight: 800; color: var(--primary); }
+    .heart-btn {
+      background: none; border: none; cursor: pointer;
+      padding: 2px; display: flex; align-items: center;
+    }
+    .heart-btn svg { width: 18px; height: 18px; }
+
+    /* "Collect now" section — accent left border */
+    .section.collect-now .section-title { color: var(--primary); }
+    .now-tag {
+      background: var(--accent);
+      color: var(--text-primary);
+      font-size: 10px; font-weight: 800;
+      border-radius: 999px;
+      padding: 2px 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── "You missed this" — greyed out ── */
+    .card.greyed {
+      filter: grayscale(80%);
+      opacity: 0.55;
+      cursor: default;
+      pointer-events: none;
+    }
+    .card.greyed .card-name { color: var(--text-secondary); }
+    .badge-tl.missed { background: var(--text-secondary); }
+    .missed-overlay {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.18);
+    }
+    .section.missed .section-title { color: var(--text-secondary); }
+
+    /* ── Section background alternation ── */
+    .section-bg { background: var(--surface); padding: 0 0 2px; }
+
+    /* ── Bottom tab bar ── */
+    .tab-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 76px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: flex-start; padding-top: 10px;
+    }
+    .tab {
+      flex: 1;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      cursor: pointer;
+      position: relative;
+    }
+    .tab-icon-wrap { position: relative; }
+    .tab svg { display: block; }
+    .tab-label { font-size: 10px; font-weight: 600; }
+    .tab.active .tab-label  { color: var(--primary); }
+    .tab.inactive .tab-label { color: var(--text-secondary); }
+    .tab-badge {
+      position: absolute; top: -3px; right: -5px;
+      background: var(--error);
+      color: #fff; font-size: 9px; font-weight: 700;
+      border-radius: 999px; min-width: 15px; height: 15px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 3px;
+      border: 2px solid var(--surface);
+    }
+  </style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span>15:29</span>
+    <div class="status-icons">
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="#1A1A1A"><rect x="0" y="3" width="2.5" height="8" rx="0.8"/><rect x="4" y="2" width="2.5" height="9" rx="0.8"/><rect x="8" y="0" width="2.5" height="11" rx="0.8"/><rect x="12" y="0" width="2.5" height="11" rx="0.8" opacity=".25"/></svg>
+      <svg width="16" height="11" viewBox="0 0 22 11" fill="#1A1A1A"><rect x="0" y="0.5" width="19" height="10" rx="2" stroke="#1A1A1A" stroke-width="1.2" fill="none"/><rect x="19.5" y="3" width="2" height="5" rx="1" fill="#1A1A1A"/><rect x="1.2" y="2" width="13" height="7" rx="1.2" fill="#2C5F2E"/></svg>
+    </div>
+  </div>
+
+  <!-- Location header -->
+  <div class="header">
+    <div class="location-row">
+      <div class="loc-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <div class="loc-texts">
+        <div class="loc-label">Chosen location</div>
+        <div class="loc-name">Belgrade <span class="chevron">&#9660;</span></div>
+      </div>
+      <div class="header-right">
+        <div class="icon-btn" title="Map view">
+          <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+        </div>
+        <div class="icon-btn" title="Notifications">
+          <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+          <div class="notif-dot"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category filter pills -->
+  <div class="categories">
+    <button class="pill active">All</button>
+    <button class="pill inactive">Meals</button>
+    <button class="pill inactive">Bread &amp; pastries</button>
+    <button class="pill inactive">Groceries</button>
+    <button class="pill inactive">Flowers &amp; plants</button>
+    <button class="pill inactive">Pet food</button>
+  </div>
+
+  <div class="hairline"></div>
+
+  <!-- Scrollable body -->
+  <div class="scroll">
+
+    <!-- ══ Collect now ══ -->
+    <div class="section collect-now">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-icon">⚡</span>
+          <span class="section-title">Collect now</span>
+          <span class="now-tag">LIVE</span>
+        </div>
+        <a class="see-all">See all</a>
+      </div>
+      <div class="h-scroll">
+
+        <div class="card">
+          <div class="card-img">
+            🥐
+            <span class="badge badge-tl urgent">1 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.2</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Pekara Trpković</div>
+            <div class="card-name">Morning bag</div>
+            <div class="card-meta">Open now &middot; 0.4 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€8.00</span>
+                <span class="price-disc">€2.49</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="#E53935" stroke="#E53935" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-img">
+            ☕
+            <span class="badge badge-tl urgent">2 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.6</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Kafeterija Centar</div>
+            <div class="card-name">Coffee &amp; snack bag</div>
+            <div class="card-meta">Open now &middot; 0.9 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€6.00</span>
+                <span class="price-disc">€1.99</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-img">
+            🥗
+            <span class="badge badge-tl urgent">3 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 3.9</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Zelena Pijaca</div>
+            <div class="card-name">Salad box</div>
+            <div class="card-meta">Open now &middot; 1.5 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€10.00</span>
+                <span class="price-disc">€3.49</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ Collect for lunch ══ -->
+    <div class="section section-bg">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-icon">🌤️</span>
+          <span class="section-title">Collect for lunch</span>
+          <span class="section-count">5</span>
+        </div>
+        <a class="see-all">See all</a>
+      </div>
+      <div class="h-scroll">
+
+        <div class="card">
+          <div class="card-img">
+            🍱
+            <span class="badge badge-tl">2 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.5</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">HajKafe</div>
+            <div class="card-name">Evening surprise bag</div>
+            <div class="card-meta">11:00–12:00 &middot; 1.2 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€12.00</span>
+                <span class="price-disc">€4.99</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-img">
+            🥙
+            <span class="badge badge-tl">4 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.1</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Kalemegdan Bistro</div>
+            <div class="card-name">Lunch mix</div>
+            <div class="card-meta">12:00–13:00 &middot; 1.8 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€14.00</span>
+                <span class="price-disc">€4.49</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-img">
+            🍕
+            <span class="badge badge-tl">1 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.8</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Pizzeria Skadarlija</div>
+            <div class="card-name">Pizza slice bag</div>
+            <div class="card-meta">12:30–13:30 &middot; 2.3 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€16.00</span>
+                <span class="price-disc">€5.49</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="#E53935" stroke="#E53935" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ Collect today ══ -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-icon">📦</span>
+          <span class="section-title">Collect today</span>
+          <span class="section-count">8</span>
+        </div>
+        <a class="see-all">See all</a>
+      </div>
+      <div class="h-scroll">
+
+        <div class="card">
+          <div class="card-img">
+            🥩
+            <span class="badge badge-tl">3 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.3</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Mesar Đorđević</div>
+            <div class="card-name">Meat surprise bag</div>
+            <div class="card-meta">17:00–18:00 &middot; 0.7 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€18.00</span>
+                <span class="price-disc">€5.99</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-img">
+            🧁
+            <span class="badge badge-tl">5 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.4</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Sweet Beograd</div>
+            <div class="card-name">Pastry box</div>
+            <div class="card-meta">18:30–19:30 &middot; 1.1 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€9.00</span>
+                <span class="price-disc">€2.99</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-img">
+            🍣
+            <span class="badge badge-tl">2 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.7</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Sushi Beograd</div>
+            <div class="card-name">Sushi surprise</div>
+            <div class="card-meta">19:00–20:00 &middot; 2.6 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€20.00</span>
+                <span class="price-disc">€6.99</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ Collect for dinner ══ -->
+    <div class="section section-bg">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-icon">🌙</span>
+          <span class="section-title">Collect for dinner</span>
+          <span class="section-count">4</span>
+        </div>
+        <a class="see-all">See all</a>
+      </div>
+      <div class="h-scroll">
+
+        <div class="card">
+          <div class="card-img">
+            🍖
+            <span class="badge badge-tl">2 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.0</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Roštilj Banović</div>
+            <div class="card-name">Grill evening bag</div>
+            <div class="card-meta">19:30–20:30 &middot; 1.4 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€15.00</span>
+                <span class="price-disc">€4.99</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-img">
+            🥘
+            <span class="badge badge-tl">3 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.2</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Restoran Zlatnik</div>
+            <div class="card-name">Warm dinner box</div>
+            <div class="card-meta">20:00–21:00 &middot; 0.9 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€13.00</span>
+                <span class="price-disc">€4.29</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ Collect tomorrow ══ -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-icon">📅</span>
+          <span class="section-title">Collect tomorrow</span>
+          <span class="section-count">6</span>
+        </div>
+        <a class="see-all">See all</a>
+      </div>
+      <div class="h-scroll">
+
+        <div class="card">
+          <div class="card-img">
+            🥖
+            <span class="badge badge-tl">5 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.1</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Pekara Lav</div>
+            <div class="card-name">Bread mix</div>
+            <div class="card-meta">Tomorrow 08:00–09:00 &middot; 0.6 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€7.00</span>
+                <span class="price-disc">€2.29</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-img">
+            🍱
+            <span class="badge badge-tl">4 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.5</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Bife kod Ace</div>
+            <div class="card-name">Chef's lunch box</div>
+            <div class="card-meta">Tomorrow 12:00–13:00 &middot; 1.9 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€11.00</span>
+                <span class="price-disc">€3.69</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-img">
+            🎂
+            <span class="badge badge-tl">2 left</span>
+            <span class="badge badge-tr"><span class="star">&#9733;</span> 4.9</span>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Torte &amp; Kolači</div>
+            <div class="card-name">Cake box</div>
+            <div class="card-meta">Tomorrow 17:00–18:00 &middot; 2.2 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€16.00</span>
+                <span class="price-disc">€5.49</span>
+              </div>
+              <button class="heart-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#757575" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ You missed this ══ -->
+    <div class="section missed" style="margin-bottom: 16px;">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-icon" style="opacity:.55;">😔</span>
+          <span class="section-title" style="color:var(--text-secondary);">You missed this</span>
+        </div>
+        <!-- no See all for expired -->
+      </div>
+      <div class="h-scroll">
+
+        <div class="card greyed">
+          <div class="card-img" style="background:#ddd;">
+            🥐
+            <span class="badge badge-tl missed">Sold out</span>
+            <span class="badge badge-tr"><span class="star" style="color:#aaa;">&#9733;</span> 4.2</span>
+            <div class="missed-overlay"></div>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Pekara Trpković</div>
+            <div class="card-name">Morning bag</div>
+            <div class="card-meta">07:00–08:00 &middot; 0.4 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€8.00</span>
+                <span class="price-disc" style="color:var(--text-secondary);">€2.49</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card greyed">
+          <div class="card-img" style="background:#ddd;">
+            🍣
+            <span class="badge badge-tl missed">Expired</span>
+            <span class="badge badge-tr"><span class="star" style="color:#aaa;">&#9733;</span> 4.7</span>
+            <div class="missed-overlay"></div>
+          </div>
+          <div class="card-body">
+            <div class="card-vendor">Sushi Beograd</div>
+            <div class="card-name">Sushi surprise</div>
+            <div class="card-meta">13:00–14:00 &middot; 2.6 km</div>
+            <div class="card-footer">
+              <div class="price-row">
+                <span class="price-orig">€20.00</span>
+                <span class="price-disc" style="color:var(--text-secondary);">€6.99</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /scroll -->
+
+  <!-- ── Bottom tab bar ── -->
+  <div class="tab-bar">
+
+    <div class="tab active">
+      <div class="tab-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#2C5F2E"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      </div>
+      <span class="tab-label">Discover</span>
+    </div>
+
+    <div class="tab inactive">
+      <div class="tab-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#757575"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      </div>
+      <span class="tab-label">Browse</span>
+    </div>
+
+    <div class="tab inactive">
+      <div class="tab-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#757575"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 23.45 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        <span class="tab-badge">2</span>
+      </div>
+      <span class="tab-label">Orders</span>
+    </div>
+
+    <div class="tab inactive">
+      <div class="tab-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#757575"><path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/></svg>
+      </div>
+      <span class="tab-label">Favourites</span>
+    </div>
+
+    <div class="tab inactive">
+      <div class="tab-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#757575"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      </div>
+      <span class="tab-label">Profile</span>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>

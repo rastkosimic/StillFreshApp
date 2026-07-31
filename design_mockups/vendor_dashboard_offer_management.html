@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>StillFresh — Vendor Screens</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  background: #E5E5EA;
+  padding: 40px 20px 60px;
+}
+
+/* ── Layout ───────────────────────────────────────────────── */
+h1 { color: #1C1C1E; text-align: center; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.page-sub { text-align: center; color: #8E8E93; font-size: 13px; margin-bottom: 44px; }
+.section-label {
+  text-align: center; color: #636366; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.2px;
+  margin: 48px 0 20px;
+}
+.row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.col { display: flex; flex-direction: column; align-items: center; }
+.phone-title { font-size: 11px; color: #636366; margin-bottom: 8px; font-weight: 600; letter-spacing: 0.3px; }
+
+/* ── Phone frame ──────────────────────────────────────────── */
+.phone {
+  width: 318px;
+  background: #F2F2F7;
+  border-radius: 48px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.10);
+  border: 10px solid #1C1C1E;
+  position: relative;
+}
+.notch {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 34px; background: #1C1C1E;
+  border-radius: 0 0 24px 24px; z-index: 10;
+}
+.status-bar {
+  background: #fff; height: 50px; padding: 14px 20px 4px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  font-size: 12px; font-weight: 600; color: #1C1C1E;
+}
+.status-bar .icons { display: flex; gap: 5px; align-items: center; font-size: 11px; }
+
+/* ── Shared screen components ─────────────────────────────── */
+.screen-body { background: #F2F2F7; min-height: 560px; overflow: hidden; }
+.screen-scroll { max-height: 560px; overflow: hidden; }
+.white-section { background: #fff; }
+
+/* Typography */
+.t-large-title { font-size: 28px; font-weight: 700; color: #1C1C1E; line-height: 1.1; }
+.t-title { font-size: 17px; font-weight: 600; color: #1C1C1E; }
+.t-headline { font-size: 15px; font-weight: 600; color: #1C1C1E; }
+.t-body { font-size: 15px; font-weight: 400; color: #1C1C1E; }
+.t-subhead { font-size: 13px; font-weight: 400; color: #1C1C1E; }
+.t-caption { font-size: 12px; color: #8E8E93; }
+.t-secondary { color: #8E8E93; }
+.t-green { color: #34C759; }
+.t-red { color: #FF3B30; }
+.t-blue { color: #007AFF; }
+.t-orange { color: #FF9500; }
+.t-brand { color: #2C5F2E; }
+.t-bold { font-weight: 700; }
+
+/* ── Tab bar ──────────────────────────────────────────────── */
+.tab-bar {
+  background: #fff; border-top: 1px solid #E5E5EA;
+  display: flex; padding: 8px 0 16px;
+}
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+.tab-icon { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; }
+.tab-icon svg { width: 22px; height: 22px; }
+.tab-lbl { font-size: 10px; font-weight: 500; color: #8E8E93; }
+.tab.active .tab-lbl { color: #2C5F2E; }
+.tab.active .tab-icon svg { stroke: #2C5F2E; }
+.tab:not(.active) .tab-icon svg { stroke: #8E8E93; }
+
+/* ── Header variants ──────────────────────────────────────── */
+.nav-header {
+  background: #fff;
+  padding: 12px 20px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid #E5E5EA;
+}
+.nav-header .back-btn {
+  font-size: 16px; color: #007AFF; font-weight: 400;
+  display: flex; align-items: center; gap: 4px;
+}
+.nav-header .save-btn { font-size: 16px; color: #007AFF; font-weight: 600; }
+.add-btn {
+  width: 32px; height: 32px; background: #2C5F2E; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 20px; font-weight: 300; line-height: 1;
+}
+
+/* ── Dashboard metric cards ───────────────────────────────── */
+.metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px 16px 8px; }
+.metric-card {
+  background: #fff; border-radius: 14px; padding: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.metric-label { font-size: 12px; color: #8E8E93; font-weight: 500; margin-bottom: 6px; }
+.metric-value { font-size: 22px; font-weight: 700; color: #1C1C1E; }
+.metric-trend { font-size: 12px; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 3px; }
+
+/* ── Search bar ───────────────────────────────────────────── */
+.search-bar {
+  background: #fff; margin: 0; padding: 10px 16px;
+  border-bottom: 1px solid #E5E5EA;
+}
+.search-input {
+  background: #F2F2F7; border-radius: 10px; padding: 8px 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.search-input span { font-size: 13px; color: #8E8E93; }
+
+/* ── Filter chips ─────────────────────────────────────────── */
+.filter-row { display: flex; gap: 8px; padding: 10px 16px; overflow: hidden; background: #fff; border-bottom: 1px solid #E5E5EA; }
+.chip {
+  border: 1px solid #E5E5EA; border-radius: 20px; padding: 5px 12px;
+  font-size: 12px; color: #1C1C1E; font-weight: 500;
+  display: flex; align-items: center; gap: 4px; white-space: nowrap;
+}
+.chip.active { background: #2C5F2E; border-color: #2C5F2E; color: #fff; }
+.chip .caret { font-size: 10px; color: #8E8E93; }
+.chip.active .caret { color: rgba(255,255,255,0.7); }
+
+/* ── List rows ────────────────────────────────────────────── */
+.list-section { background: #fff; margin: 10px 0; }
+.list-section-header {
+  padding: 14px 16px 6px; font-size: 13px; font-weight: 600;
+  color: #8E8E93; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.list-row {
+  background: #fff; padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid #F2F2F7;
+}
+.list-row:last-child { border-bottom: none; }
+.list-thumb {
+  width: 46px; height: 46px; border-radius: 10px; background: #F2F2F7;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0; overflow: hidden;
+}
+.list-info { flex: 1; min-width: 0; }
+.list-name { font-size: 15px; font-weight: 500; color: #1C1C1E; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list-sub { font-size: 13px; color: #8E8E93; margin-top: 2px; }
+.list-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.chevron { color: #C7C7CC; font-size: 16px; font-weight: 500; }
+
+/* Status labels — text only, no filled background */
+.status { font-size: 12px; font-weight: 600; }
+.status-active { color: #34C759; }
+.status-expired { color: #FF3B30; }
+.status-soldout { color: #FF3B30; }
+.status-inactive { color: #8E8E93; }
+
+/* ── Section with "See All" link ──────────────────────────── */
+.section-header-row {
+  padding: 16px 16px 8px; display: flex; align-items: center; justify-content: space-between;
+}
+.section-header-row .title { font-size: 17px; font-weight: 700; color: #1C1C1E; }
+.section-header-row .see-all { font-size: 14px; color: #007AFF; font-weight: 400; }
+
+/* ── Form sections ────────────────────────────────────────── */
+.form-group { background: #fff; border-radius: 14px; margin: 8px 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.form-group-label { font-size: 13px; font-weight: 600; color: #8E8E93; text-transform: uppercase; letter-spacing: 0.5px; padding: 14px 16px 6px; }
+.form-row {
+  padding: 12px 16px; border-bottom: 1px solid #F2F2F7;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.form-row:last-child { border-bottom: none; }
+.form-label { font-size: 15px; color: #1C1C1E; font-weight: 400; min-width: 90px; }
+.form-value { font-size: 15px; color: #8E8E93; text-align: right; flex: 1; }
+.form-value.filled { color: #1C1C1E; }
+.form-value.placeholder { color: #C7C7CC; }
+.form-input-row { padding: 0 16px 12px; }
+.form-textarea {
+  background: #F2F2F7; border-radius: 10px; padding: 10px 12px;
+  font-size: 14px; color: #1C1C1E; min-height: 60px; width: 100%;
+}
+.form-textarea.placeholder { color: #C7C7CC; }
+
+/* ── Image picker ─────────────────────────────────────────── */
+.img-picker-card {
+  background: #fff; border-radius: 14px; margin: 8px 16px; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.img-picker-inner {
+  height: 120px; background: #F2F2F7; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+}
+.img-picker-inner.has-img { background: #E8F5E9; }
+.img-picker-icon { font-size: 26px; color: #8E8E93; }
+.img-picker-text { font-size: 13px; color: #8E8E93; }
+
+/* ── Pill selectors ───────────────────────────────────────── */
+.pill-scroll { display: flex; gap: 8px; padding: 8px 16px 12px; overflow: hidden; }
+.pill-opt {
+  border: 1px solid #E5E5EA; border-radius: 20px; padding: 6px 14px;
+  font-size: 13px; color: #1C1C1E; font-weight: 500; white-space: nowrap;
+}
+.pill-opt.active { background: #2C5F2E; border-color: #2C5F2E; color: #fff; }
+
+/* ── Action / reactivation note ──────────────────────────── */
+.info-bar {
+  margin: 8px 16px; background: #FFF9EC; border-left: 3px solid #FF9500;
+  border-radius: 8px; padding: 10px 12px;
+  font-size: 13px; color: #7D4E00;
+}
+
+/* ── Primary button ───────────────────────────────────────── */
+.btn-primary {
+  margin: 12px 16px; background: #2C5F2E; border-radius: 14px;
+  padding: 15px; text-align: center; font-size: 16px;
+  font-weight: 600; color: #fff;
+}
+.btn-primary.disabled { background: #E5E5EA; color: #8E8E93; }
+.btn-accent {
+  margin: 12px 16px; background: #B8D94A; border-radius: 14px;
+  padding: 15px; text-align: center; font-size: 16px;
+  font-weight: 600; color: #1A2E22;
+}
+
+/* ── Danger / delete ──────────────────────────────────────── */
+.danger-row { padding: 16px; text-align: center; font-size: 15px; color: #FF3B30; font-weight: 500; }
+
+/* ── Order / transaction row ──────────────────────────────── */
+.order-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+}
+.badge-paid { background: #E8F5E9; color: #2C5F2E; }
+.badge-waiting { background: #FFF3E0; color: #FF9500; }
+.badge-confirmed { background: #E3F2FD; color: #007AFF; }
+
+/* ── Error text ───────────────────────────────────────────── */
+.error-hint { font-size: 12px; color: #FF3B30; padding: 2px 16px 8px; }
+
+/* ── Modal overlay ────────────────────────────────────────── */
+.modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: flex-end; z-index: 20; }
+.action-sheet { background: #F2F2F7; border-radius: 16px 16px 0 0; padding: 0 0 16px; width: 100%; }
+.sheet-title { text-align: center; font-size: 13px; color: #8E8E93; padding: 12px 16px 4px; }
+.sheet-item-group { background: #fff; border-radius: 14px; margin: 6px 12px; overflow: hidden; }
+.sheet-item { padding: 14px 16px; font-size: 17px; font-weight: 400; color: #1C1C1E; border-bottom: 1px solid #F2F2F7; text-align: center; }
+.sheet-item:last-child { border-bottom: none; }
+.sheet-item.destructive { color: #FF3B30; }
+.sheet-item.cancel-item { font-weight: 600; }
+
+/* Trend arrows */
+.up::before { content: '↑ '; }
+.down::before { content: '↓ '; }
+</style>
+</head>
+<body>
+
+<h1>StillFresh — Vendor Screens</h1>
+<p class="page-sub">Design reference: clean iOS-native, outline icons, text-only status labels</p>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<p class="section-label">① Vendor Dashboard</p>
+
+<div class="row">
+
+  <!-- Dashboard – metrics + offers -->
+  <div class="col">
+    <p class="phone-title">Dashboard — UNIQUE vendor</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div>
+      </div>
+      <div class="screen-scroll">
+
+        <!-- Large title header -->
+        <div style="background:#fff; padding: 10px 20px 14px; border-bottom: 1px solid #E5E5EA;">
+          <div style="font-size:11px; color:#8E8E93; font-weight:500; margin-bottom:4px">Fri, 27 Mar 2026</div>
+          <div style="display:flex; align-items:flex-end; justify-content:space-between">
+            <div class="t-large-title">Dashboard</div>
+            <div style="font-size:13px; color:#007AFF; font-weight:500">This week ▾</div>
+          </div>
+        </div>
+
+        <!-- Metric cards -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Revenue</div>
+            <div class="metric-value">€124</div>
+            <div class="metric-trend t-green"><span class="up"></span>+12.4%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Active Offers</div>
+            <div class="metric-value">3</div>
+            <div class="metric-trend t-secondary">of 5 total</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Orders Today</div>
+            <div class="metric-value">8</div>
+            <div class="metric-trend t-green"><span class="up"></span>+38.2%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Sell-through</div>
+            <div class="metric-value">82%</div>
+            <div class="metric-trend t-red"><span class="down"></span>-3.1%</div>
+          </div>
+        </div>
+
+        <!-- Active offers list -->
+        <div class="list-section" style="margin-top:10px">
+          <div class="section-header-row">
+            <span class="title">Active Offers</span>
+            <span class="see-all">See All</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb">🛍️</div>
+            <div class="list-info">
+              <div class="list-name">Lunch surprise bag</div>
+              <div class="list-sub">14:00–16:00 · 3 left</div>
+            </div>
+            <div class="list-right">
+              <span class="t-headline t-bold">€4.99</span>
+              <span class="status status-active">Active</span>
+            </div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb">🥐</div>
+            <div class="list-info">
+              <div class="list-name">Morning pastries</div>
+              <div class="list-sub">08:00–10:00 · 5 left</div>
+            </div>
+            <div class="list-right">
+              <span class="t-headline t-bold">€2.50</span>
+              <span class="status status-active">Active</span>
+            </div>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="list-section" style="margin-top:10px">
+          <div class="list-section-header">Manage</div>
+          <div class="list-row">
+            <div class="list-thumb" style="background:#E8F5E9">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2C5F2E" stroke-width="1.8" width="22" height="22"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>
+            </div>
+            <div class="list-info"><div class="list-name">Create new listing</div></div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb" style="background:#F2F2F7">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="1.8" width="22" height="22"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+            </div>
+            <div class="list-info"><div class="list-name">Payment settings</div></div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb" style="background:#F2F2F7">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="1.8" width="22" height="22"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0113 0"/></svg>
+            </div>
+            <div class="list-info"><div class="list-name">Upgrade to chain</div></div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb" style="background:#FFF0F0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="1.8" width="22" height="22"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+            </div>
+            <div class="list-info"><div class="list-name t-red">Delete account</div></div>
+            <span class="chevron" style="color:#FF3B30">›</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="tab-bar">
+        <div class="tab active">
+          <div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div>
+          <span class="tab-lbl">Dashboard</span>
+        </div>
+        <div class="tab">
+          <div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></div>
+          <span class="tab-lbl">Offers</span>
+        </div>
+        <div class="tab">
+          <div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <span class="tab-lbl">Analytics</span>
+        </div>
+        <div class="tab">
+          <div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+          <span class="tab-lbl">Profile</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard – CHAIN HQ admin -->
+  <div class="col">
+    <p class="phone-title">Dashboard — CHAIN HQ admin</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div></div>
+      <div class="screen-scroll">
+
+        <div style="background:#fff; padding: 10px 20px 14px; border-bottom: 1px solid #E5E5EA;">
+          <div style="font-size:11px; color:#8E8E93; font-weight:500; margin-bottom:4px">Fresh Chain · Headquarters</div>
+          <div style="display:flex; align-items:flex-end; justify-content:space-between">
+            <div class="t-large-title">Dashboard</div>
+            <div style="font-size:13px; color:#007AFF; font-weight:500">This week ▾</div>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Revenue</div>
+            <div class="metric-value">€2,140</div>
+            <div class="metric-trend t-green"><span class="up"></span>+23.4%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Locations</div>
+            <div class="metric-value">4</div>
+            <div class="metric-trend t-secondary">active</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Total Orders</div>
+            <div class="metric-value">94</div>
+            <div class="metric-trend t-green"><span class="up"></span>+18.2%</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Sell-through</div>
+            <div class="metric-value">76%</div>
+            <div class="metric-trend t-green"><span class="up"></span>+5.1%</div>
+          </div>
+        </div>
+
+        <div class="list-section" style="margin-top:10px">
+          <div class="list-section-header">Quick actions</div>
+          <div class="list-row">
+            <div class="list-thumb" style="background:#E8F5E9">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2C5F2E" stroke-width="1.8" width="22" height="22"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>
+            </div>
+            <div class="list-info"><div class="list-name">Create new listing</div></div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb" style="background:#F2F2F7">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="1.8" width="22" height="22"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
+            </div>
+            <div class="list-info"><div class="list-name">Manage locations</div><div class="list-sub">4 locations</div></div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb" style="background:#F2F2F7">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="1.8" width="22" height="22"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            </div>
+            <div class="list-info"><div class="list-name">Manage workers</div></div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb" style="background:#F2F2F7">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="1.8" width="22" height="22"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            </div>
+            <div class="list-info"><div class="list-name">Banking model</div></div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb" style="background:#F2F2F7">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="1.8" width="22" height="22"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+            </div>
+            <div class="list-info"><div class="list-name">Payment settings</div></div>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="tab-bar">
+        <div class="tab active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><span class="tab-lbl">Dashboard</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></div><span class="tab-lbl">Offers</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><span class="tab-lbl">Analytics</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><span class="tab-lbl">Profile</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete modal -->
+  <div class="col">
+    <p class="phone-title">Delete account — modal</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div></div>
+      <div class="screen-scroll" style="position:relative; min-height:560px">
+        <!-- blurred bg -->
+        <div style="filter:blur(2px); opacity:0.35; pointer-events:none">
+          <div style="background:#fff; padding:10px 20px 14px;"><div class="t-large-title">Dashboard</div></div>
+          <div class="metrics-grid">
+            <div class="metric-card"><div class="metric-label">Revenue</div><div class="metric-value">€124</div></div>
+            <div class="metric-card"><div class="metric-label">Orders</div><div class="metric-value">8</div></div>
+          </div>
+        </div>
+        <!-- Sheet -->
+        <div class="modal-overlay" style="align-items:center">
+          <div style="background:#fff; border-radius:20px; margin:0 16px; padding:24px; width:100%">
+            <div style="font-size:18px; font-weight:700; color:#1C1C1E; margin-bottom:8px">Delete Account</div>
+            <div style="font-size:14px; color:#8E8E93; margin-bottom:20px; line-height:1.5">Are you sure? This cannot be undone. Your offers and order history will be permanently removed.</div>
+            <div style="font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px">Reason (optional)</div>
+            <div style="background:#F2F2F7; border-radius:10px; padding:11px 13px; font-size:14px; color:#C7C7CC; margin-bottom:12px">e.g. Switching to another service</div>
+            <div style="font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px">Feedback (optional)</div>
+            <div style="background:#F2F2F7; border-radius:10px; padding:11px 13px; font-size:14px; color:#C7C7CC; margin-bottom:20px; min-height:50px">Additional comments...</div>
+            <div style="display:flex; gap:10px">
+              <div style="flex:1; border:1px solid #E5E5EA; border-radius:12px; padding:13px; text-align:center; font-size:15px; font-weight:600; color:#1C1C1E">Cancel</div>
+              <div style="flex:1; background:#FF3B30; border-radius:12px; padding:13px; text-align:center; font-size:15px; font-weight:600; color:#fff">Delete</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><span class="tab-lbl">Dashboard</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg></div><span class="tab-lbl">Offers</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><span class="tab-lbl">Analytics</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><span class="tab-lbl">Profile</span></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /row -->
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<p class="section-label">② All Offers Screen</p>
+
+<div class="row">
+
+  <!-- All offers list – mixed statuses -->
+  <div class="col">
+    <p class="phone-title">All offers — mixed statuses</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div></div>
+      <div class="screen-scroll">
+        <!-- Header -->
+        <div style="background:#fff; padding:10px 20px 14px; border-bottom:1px solid #E5E5EA;">
+          <div style="display:flex; align-items:flex-end; justify-content:space-between">
+            <div class="t-large-title">My Offers</div>
+            <div class="add-btn">+</div>
+          </div>
+        </div>
+        <!-- Search -->
+        <div class="search-bar">
+          <div class="search-input">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E8E93" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <span>Search offers</span>
+          </div>
+        </div>
+        <!-- Filter chips -->
+        <div class="filter-row">
+          <div class="chip active">All</div>
+          <div class="chip">Active</div>
+          <div class="chip">Expired</div>
+          <div class="chip">Sold out</div>
+        </div>
+        <!-- List -->
+        <div class="list-section">
+          <div class="list-row">
+            <div class="list-thumb">🛍️</div>
+            <div class="list-info">
+              <div class="list-name">Lunch surprise bag</div>
+              <div class="list-sub">14:00–16:00 · 3 left</div>
+            </div>
+            <div class="list-right">
+              <span class="t-subhead t-bold">€4.99</span>
+              <span class="status status-active">Active</span>
+            </div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row" style="opacity:0.55">
+            <div class="list-thumb">🥐</div>
+            <div class="list-info">
+              <div class="list-name">Morning pastries</div>
+              <div class="list-sub">08:00–10:00</div>
+            </div>
+            <div class="list-right">
+              <span class="t-subhead t-bold">€2.50</span>
+              <span class="status status-expired">Expired</span>
+            </div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb">🥗</div>
+            <div class="list-info">
+              <div class="list-name">Fresh salad box</div>
+              <div class="list-sub">12:00–14:00 · 5 left</div>
+            </div>
+            <div class="list-right">
+              <span class="t-subhead t-bold">€3.49</span>
+              <span class="status status-active">Active</span>
+            </div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row" style="opacity:0.55">
+            <div class="list-thumb">🍕</div>
+            <div class="list-info">
+              <div class="list-name">Pizza evening deal</div>
+              <div class="list-sub">19:00–21:00</div>
+            </div>
+            <div class="list-right">
+              <span class="t-subhead t-bold">€5.99</span>
+              <span class="status status-soldout">Sold out</span>
+            </div>
+            <span class="chevron">›</span>
+          </div>
+          <div class="list-row">
+            <div class="list-thumb">🧁</div>
+            <div class="list-info">
+              <div class="list-name">Dessert box</div>
+              <div class="list-sub">16:00–18:00 · 2 left</div>
+            </div>
+            <div class="list-right">
+              <span class="t-subhead t-bold">€3.99</span>
+              <span class="status status-active">Active</span>
+            </div>
+            <span class="chevron">›</span>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><span class="tab-lbl">Dashboard</span></div>
+        <div class="tab active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></div><span class="tab-lbl">Offers</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><span class="tab-lbl">Analytics</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><span class="tab-lbl">Profile</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action sheet on tap -->
+  <div class="col">
+    <p class="phone-title">Tap active offer → action sheet</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div></div>
+      <div class="screen-scroll" style="position:relative; min-height:560px">
+        <!-- Blurred list -->
+        <div style="filter:blur(2px); opacity:0.4; pointer-events:none">
+          <div style="background:#fff; padding:10px 20px 14px;"><div class="t-large-title">My Offers</div></div>
+          <div class="list-section">
+            <div class="list-row"><div class="list-thumb">🛍️</div><div class="list-info"><div class="list-name">Lunch surprise bag</div><div class="list-sub">14:00–16:00</div></div><div class="list-right"><span class="status status-active">Active</span></div><span class="chevron">›</span></div>
+            <div class="list-row"><div class="list-thumb">🥐</div><div class="list-info"><div class="list-name">Morning pastries</div></div><span class="chevron">›</span></div>
+          </div>
+        </div>
+        <!-- Action sheet -->
+        <div class="modal-overlay">
+          <div class="action-sheet">
+            <div class="sheet-title">Lunch surprise bag</div>
+            <div class="sheet-item-group">
+              <div class="sheet-item">Update offer</div>
+              <div class="sheet-item destructive">Invalidate offer</div>
+            </div>
+            <div class="sheet-item-group">
+              <div class="sheet-item cancel-item">Cancel</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><span class="tab-lbl">Dashboard</span></div>
+        <div class="tab active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div><span class="tab-lbl">Offers</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><span class="tab-lbl">Analytics</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><span class="tab-lbl">Profile</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="col">
+    <p class="phone-title">Empty state</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div></div>
+      <div class="screen-scroll">
+        <div style="background:#fff; padding:10px 20px 14px; border-bottom:1px solid #E5E5EA;">
+          <div style="display:flex; align-items:flex-end; justify-content:space-between">
+            <div class="t-large-title">My Offers</div>
+            <div class="add-btn">+</div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:400px; padding:24px; text-align:center">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" stroke-width="1.4" style="margin-bottom:16px"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+          <div style="font-size:17px; font-weight:600; color:#1C1C1E; margin-bottom:8px">No offers yet</div>
+          <div style="font-size:15px; color:#8E8E93; line-height:1.5; margin-bottom:24px">Create your first listing to start saving food and reaching customers.</div>
+          <div style="background:#2C5F2E; border-radius:14px; padding:13px 28px; font-size:15px; font-weight:600; color:#fff">Create listing</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><span class="tab-lbl">Dashboard</span></div>
+        <div class="tab active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div><span class="tab-lbl">Offers</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><span class="tab-lbl">Analytics</span></div>
+        <div class="tab"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><span class="tab-lbl">Profile</span></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /row -->
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<p class="section-label">③ Create Offer Screen</p>
+
+<div class="row">
+
+  <!-- Create – top of form -->
+  <div class="col">
+    <p class="phone-title">Create offer — top of form</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div></div>
+      <div class="screen-scroll">
+        <div class="nav-header" style="border-bottom:1px solid #E5E5EA">
+          <span class="back-btn">
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="#007AFF" stroke-width="2"><path d="M8 2L2 8l6 6"/></svg>
+            Back
+          </span>
+          <span class="t-title">Create Offer</span>
+          <span class="save-btn" style="color:#C7C7CC">Save</span>
+        </div>
+
+        <!-- Photo -->
+        <div style="margin:12px 16px 0">
+          <div style="font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px">Photo</div>
+        </div>
+        <div class="img-picker-card">
+          <div class="img-picker-inner">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#C7C7CC" stroke-width="1.6"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span class="img-picker-text">Tap to add photo</span>
+          </div>
+        </div>
+
+        <!-- Basic info -->
+        <div style="margin:10px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Basic Info</div>
+        <div class="form-group" style="margin-top:6px">
+          <div class="form-row">
+            <span class="form-label">Name</span>
+            <span class="form-value placeholder">e.g. Lunch surprise bag</span>
+          </div>
+          <div class="form-row" style="flex-direction:column; align-items:flex-start; gap:8px">
+            <span class="form-label">Description</span>
+            <div class="form-textarea placeholder" style="width:100%">Tell customers what type of food they might find...</div>
+          </div>
+        </div>
+
+        <!-- Pricing -->
+        <div style="margin:10px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Pricing</div>
+        <div class="form-group" style="margin-top:6px">
+          <div class="form-row">
+            <span class="form-label">Our price</span>
+            <span class="form-value placeholder">e.g. 4.99 EUR</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Original price</span>
+            <span class="form-value placeholder">e.g. 14.99 EUR</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Quantity</span>
+            <span class="form-value placeholder">e.g. 5</span>
+          </div>
+        </div>
+
+        <div class="btn-primary disabled">Save Offer</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create – pickup section -->
+  <div class="col">
+    <p class="phone-title">Create offer — pickup & category</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div></div>
+      <div class="screen-scroll">
+        <div class="nav-header" style="border-bottom:1px solid #E5E5EA">
+          <span class="back-btn"><svg width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="#007AFF" stroke-width="2"><path d="M8 2L2 8l6 6"/></svg> Back</span>
+          <span class="t-title">Create Offer</span>
+          <span class="save-btn">Save</span>
+        </div>
+
+        <!-- Pickup date -->
+        <div style="margin:12px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Pickup</div>
+        <div class="form-group" style="margin-top:6px">
+          <div class="form-row" style="flex-direction:column; align-items:flex-start; gap:8px; border-bottom:1px solid #F2F2F7">
+            <span class="form-label">Date</span>
+            <div class="pill-scroll" style="padding:0 0 4px">
+              <div class="pill-opt active">Today</div>
+              <div class="pill-opt">Tomorrow</div>
+            </div>
+            <div style="background:#F2F2F7; border-radius:10px; padding:10px 12px; font-size:14px; color:#1C1C1E; width:100%">27-03-2026</div>
+          </div>
+          <div class="form-row" style="flex-direction:column; align-items:flex-start; gap:8px">
+            <span class="form-label">Time window</span>
+            <div class="pill-scroll" style="padding:0 0 4px; flex-wrap:nowrap; overflow:hidden">
+              <div class="pill-opt">10:00–12:00</div>
+              <div class="pill-opt active">14:00–16:00</div>
+              <div class="pill-opt">16:00–18:00</div>
+            </div>
+            <div style="display:flex; gap:10px; width:100%">
+              <div style="flex:1">
+                <div style="font-size:12px; color:#8E8E93; margin-bottom:4px">Start</div>
+                <div style="background:#F2F2F7; border-radius:10px; padding:10px 12px; font-size:14px; color:#1C1C1E">14:00</div>
+              </div>
+              <div style="flex:1">
+                <div style="font-size:12px; color:#8E8E93; margin-bottom:4px">End</div>
+                <div style="background:#F2F2F7; border-radius:10px; padding:10px 12px; font-size:14px; color:#1C1C1E">16:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category -->
+        <div style="margin:10px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Category</div>
+        <div class="form-group" style="margin-top:6px">
+          <div class="form-row" style="flex-direction:column; align-items:flex-start; gap:8px">
+            <div class="pill-scroll" style="padding:0 0 4px; flex-wrap:wrap; gap:8px">
+              <div class="pill-opt">None</div>
+              <div class="pill-opt active">Meals</div>
+              <div class="pill-opt">Bread & Pastries</div>
+              <div class="pill-opt">Groceries</div>
+              <div class="pill-opt">Flowers</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Dietary info</span>
+            <span class="form-value placeholder">Vegetarian, gluten-free...</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Allergens</span>
+            <span class="form-value placeholder">Nuts, dairy...</span>
+          </div>
+        </div>
+
+        <div class="btn-primary">Save Offer</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create – validation error -->
+  <div class="col">
+    <p class="phone-title">Price validation error</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div></div>
+      <div class="screen-scroll">
+        <div class="nav-header" style="border-bottom:1px solid #E5E5EA">
+          <span class="back-btn"><svg width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="#007AFF" stroke-width="2"><path d="M8 2L2 8l6 6"/></svg> Back</span>
+          <span class="t-title">Create Offer</span>
+          <span class="save-btn" style="color:#C7C7CC">Save</span>
+        </div>
+
+        <div style="margin:12px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Basic Info</div>
+        <div class="form-group" style="margin-top:6px">
+          <div class="form-row">
+            <span class="form-label">Name</span>
+            <span class="form-value filled">Morning pastry mix</span>
+          </div>
+        </div>
+
+        <div style="margin:10px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Pricing</div>
+        <div class="form-group" style="margin-top:6px; border:1.5px solid #FF3B30;">
+          <div class="form-row">
+            <span class="form-label">Our price</span>
+            <span class="form-value filled" style="color:#FF3B30">15.00 EUR</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Original price</span>
+            <span class="form-value filled" style="color:#FF3B30">8.00 EUR</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Quantity</span>
+            <span class="form-value filled">5</span>
+          </div>
+        </div>
+        <div class="error-hint">⚠ Discounted price must be less than original price.</div>
+
+        <div style="margin:4px 16px; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Photo</div>
+        <div class="img-picker-card">
+          <div class="img-picker-inner has-img" style="background:#E8F5E9; border-bottom:1px solid #E5E5EA">
+            <div style="font-size:42px; line-height:1">🥐</div>
+            <span style="font-size:12px; color:#2C5F2E; font-weight:500">Tap to change · Remove</span>
+          </div>
+        </div>
+
+        <div class="btn-primary disabled">Save Offer</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /row -->
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<p class="section-label">④ Update Offer Screen</p>
+
+<div class="row">
+
+  <!-- Update – pre-filled active offer -->
+  <div class="col">
+    <p class="phone-title">Update active offer (pre-filled)</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div></div>
+      <div class="screen-scroll">
+        <div class="nav-header" style="border-bottom:1px solid #E5E5EA">
+          <span class="back-btn"><svg width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="#007AFF" stroke-width="2"><path d="M8 2L2 8l6 6"/></svg> Back</span>
+          <span class="t-title">Edit Offer</span>
+          <span class="save-btn">Save</span>
+        </div>
+
+        <div class="img-picker-card" style="margin:12px 16px 0">
+          <div class="img-picker-inner has-img" style="background:#E8F5E9">
+            <div style="font-size:42px">🥗</div>
+            <span style="font-size:12px; color:#2C5F2E; font-weight:500">Tap to change</span>
+          </div>
+        </div>
+
+        <div style="margin:12px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Basic Info</div>
+        <div class="form-group" style="margin-top:6px">
+          <div class="form-row">
+            <span class="form-label">Name</span>
+            <span class="form-value filled">Fresh salad box</span>
+          </div>
+          <div class="form-row" style="flex-direction:column; align-items:flex-start; gap:6px">
+            <span class="form-label">Description</span>
+            <div class="form-textarea">Mixed salad with seasonal vegetables and homemade dressing.</div>
+          </div>
+        </div>
+
+        <div style="margin:10px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Pricing</div>
+        <div class="form-group" style="margin-top:6px">
+          <div class="form-row">
+            <span class="form-label">Our price</span>
+            <span class="form-value filled">3.49 EUR</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Original price</span>
+            <span class="form-value filled">9.00 EUR</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Quantity</span>
+            <span class="form-value filled">5</span>
+          </div>
+        </div>
+
+        <div style="margin:10px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Pickup</div>
+        <div class="form-group" style="margin-top:6px">
+          <div class="form-row">
+            <span class="form-label">Date</span>
+            <span class="form-value filled">27-03-2026</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Time</span>
+            <span class="form-value filled">12:00 – 14:00</span>
+          </div>
+        </div>
+
+        <div class="btn-primary">Save Changes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update – reactivation mode -->
+  <div class="col">
+    <p class="phone-title">Reactivate expired offer</p>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="status-bar"><span>9:41</span><div class="icons"><span>●●●</span><span>WiFi</span><span>▮</span></div></div>
+      <div class="screen-scroll">
+        <div class="nav-header" style="border-bottom:1px solid #E5E5EA">
+          <span class="back-btn"><svg width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="#007AFF" stroke-width="2"><path d="M8 2L2 8l6 6"/></svg> Back</span>
+          <span class="t-title">Reactivate Offer</span>
+          <span class="save-btn">Save</span>
+        </div>
+
+        <div class="info-bar" style="margin-top:12px">
+          ⚠ This offer has expired. Update the date, time and quantity to reactivate it for customers.
+        </div>
+
+        <div style="margin:10px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Basic Info</div>
+        <div class="form-group" style="margin-top:6px">
+          <div class="form-row">
+            <span class="form-label">Name</span>
+            <span class="form-value filled">Morning pastries</span>
+          </div>
+        </div>
+
+        <div style="margin:10px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Pickup — update required</div>
+        <div class="form-group" style="margin-top:6px; border:1.5px solid #FF9500">
+          <div class="form-row" style="flex-direction:column; align-items:flex-start; gap:8px; border-bottom:1px solid #F2F2F7">
+            <span class="form-label">Date</span>
+            <div class="pill-scroll" style="padding:0 0 4px">
+              <div class="pill-opt active">Today</div>
+              <div class="pill-opt">Tomorrow</div>
+            </div>
+            <div style="background:#F2F2F7; border-radius:10px; padding:10px 12px; font-size:14px; color:#1C1C1E; width:100%">27-03-2026</div>
+          </div>
+          <div class="form-row" style="flex-direction:column; align-items:flex-start; gap:8px">
+            <span class="form-label">Time window</span>
+            <div class="pill-scroll" style="padding:0 0 4px; overflow:hidden">
+              <div class="pill-opt active">10:00–12:00</div>
+              <div class="pill-opt">12:00–14:00</div>
+              <div class="pill-opt">14:00–16:00</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:10px 16px 0; font-size:12px; color:#8E8E93; font-weight:600; text-transform:uppercase; letter-spacing:0.5px">Pricing</div>
+        <div class="form-group" style="margin-top:6px">
+          <div class="form-row">
+            <span class="form-label">Our price</span>
+            <span class="form-value filled">2.50 EUR</span>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Quantity</span>
+            <span class="form-value filled" style="color:#FF9500">8 ← increase to reactivate</span>
+          </div>
+        </div>
+
+        <div class="btn-accent">Reactivate Offer</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /row -->
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<div style="background:#fff; border-radius:16px; padding:20px 24px; margin:48px auto 0; max-width:1020px">
+  <div style="font-size:14px; font-weight:700; color:#1C1C1E; margin-bottom:12px">Design principles applied</div>
+  <div style="display:flex; flex-wrap:wrap; gap:8px 32px">
+    <div style="font-size:13px; color:#636366; padding-left:14px; position:relative"><span style="position:absolute;left:0;color:#2C5F2E">→</span> White/light-gray backgrounds only — no colored header blocks</div>
+    <div style="font-size:13px; color:#636366; padding-left:14px; position:relative"><span style="position:absolute;left:0;color:#2C5F2E">→</span> Outline SVG icons throughout — no filled/colored icons</div>
+    <div style="font-size:13px; color:#636366; padding-left:14px; position:relative"><span style="position:absolute;left:0;color:#2C5F2E">→</span> Status shown as text-color labels — no filled badge backgrounds</div>
+    <div style="font-size:13px; color:#636366; padding-left:14px; position:relative"><span style="position:absolute;left:0;color:#2C5F2E">→</span> Large bold title left-aligned, action (+ / Save) right-aligned</div>
+    <div style="font-size:13px; color:#636366; padding-left:14px; position:relative"><span style="position:absolute;left:0;color:#2C5F2E">→</span> Form fields grouped in white cards with section labels above</div>
+    <div style="font-size:13px; color:#636366; padding-left:14px; position:relative"><span style="position:absolute;left:0;color:#2C5F2E">→</span> Metric cards: label small gray, value large bold, trend ↑↓ colored</div>
+    <div style="font-size:13px; color:#636366; padding-left:14px; position:relative"><span style="position:absolute;left:0;color:#2C5F2E">→</span> Action sheet for offer actions (iOS-native pattern)</div>
+    <div style="font-size:13px; color:#636366; padding-left:14px; position:relative"><span style="position:absolute;left:0;color:#2C5F2E">→</span> Reactivation: amber left-border info bar + amber card border</div>
+  </div>
+</div>
+
+</body>
+</html>

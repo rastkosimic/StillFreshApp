@@ -26,12 +26,30 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
+# macOS / Windows / IDE
 .DS_Store
+Thumbs.db
 *.pem
+*.swp
+.idea/
 
-# local env files
-.env*.local
+# local env files — .env.example is the only env file that should be committed
+.env
+.env.*
+!.env.example
+
+# Firebase / Google services (contain API keys) — use *.example templates
+google-services.json
+GoogleService-Info.plist
+
+# Asset edit leftovers
+*.bak
+*.pre-depth
+*.user-source
+
+# coverage / build reports
+coverage/
+*.lcov
 
 # typescript
 *.tsbuildinfo

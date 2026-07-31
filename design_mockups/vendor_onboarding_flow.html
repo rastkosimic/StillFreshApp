@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StillFresh — Vendor Onboarding Flow</title>
+  <style>
+    :root {
+      --primary:    #2C5F2E;
+      --primary-lt: #e8f5e9;
+      --accent:     #B8D94A;
+      --accent-dk:  #9bbf35;
+      --bg:         #F4F4F2;
+      --surface:    #FFFFFF;
+      --text:       #1A2E22;
+      --text-sec:   #6B8A74;
+      --border:     #E5E5E5;
+      --error:      #E74C3C;
+      --warning:    #F39C12;
+      --warning-lt: #FEF3CD;
+      --stripe:     #635BFF;
+      --stripe-lt:  #f0efff;
+      --mor:        #0070f3;
+      --mor-lt:     #e8f1ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a2e;
+      padding: 40px 20px 60px;
+      color: var(--text);
+    }
+    h1 { text-align:center; color:#fff; font-size:26px; font-weight:700; margin-bottom:8px; }
+    .subtitle { text-align:center; color:#aaa; font-size:13px; margin-bottom:16px; }
+
+    /* ── flow section ── */
+    .flow-section { margin-bottom: 48px; }
+    .flow-title {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      padding-left: 4px;
+    }
+    .flow-row {
+      display: flex;
+      gap: 20px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      align-items: flex-start;
+    }
+
+    /* ── step column ── */
+    .step-col { display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
+    .step-label { color:var(--accent); font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+    .step-name  { color:#fff; font-size:11px; font-weight:600; margin-bottom:10px; text-align:center; max-width:180px; }
+
+    /* ── phone ── */
+    .phone {
+      width: 190px;
+      background: var(--bg);
+      border-radius: 34px;
+      border: 6px solid #2a2a3e;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5), inset 0 0 0 1px #3a3a5e;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone::before {
+      content:''; display:block; width:64px; height:16px;
+      background:#2a2a3e; border-radius:0 0 10px 10px; margin:0 auto; flex-shrink:0;
+    }
+    .screen { flex:1; display:flex; flex-direction:column; padding:8px 12px 12px; overflow:hidden; }
+
+    /* ── progress ── */
+    .progress-bar { display:flex; gap:3px; margin-bottom:12px; }
+    .progress-dot { flex:1; height:3px; border-radius:2px; background:var(--border); }
+    .progress-dot.done   { background:var(--primary); }
+    .progress-dot.active { background:var(--accent); }
+
+    /* ── typography ── */
+    .screen-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:3px; line-height:1.3; }
+    .screen-desc  { font-size:9px; color:var(--text-sec); line-height:1.4; margin-bottom:10px; }
+
+    /* ── card ── */
+    .card { background:var(--surface); border-radius:10px; padding:8px 10px; border:1.5px solid var(--border); margin-bottom:6px; }
+    .card.selected { border-color:var(--primary); background:var(--primary-lt); }
+    .card-title { font-size:11px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:4px; }
+    .card-desc  { font-size:8.5px; color:var(--text-sec); margin-top:2px; line-height:1.35; }
+
+    /* ── stripe / mor cards ── */
+    .card.stripe-card { border-color:var(--stripe); background:var(--stripe-lt); }
+    .card.mor-card    { border-color:var(--mor);    background:var(--mor-lt); }
+
+    /* ── inputs ── */
+    .input-group { margin-bottom:6px; }
+    .input-label { font-size:8.5px; font-weight:600; color:var(--text-sec); margin-bottom:2px; text-transform:uppercase; letter-spacing:0.5px; }
+    .input-field { background:var(--surface); border:1.5px solid var(--border); border-radius:7px; padding:5px 7px; font-size:9.5px; color:var(--text); width:100%; }
+    .input-field.filled { border-color:var(--primary); }
+    .input-row { display:flex; gap:5px; }
+    .input-row .input-group { flex:1; }
+
+    /* ── geo ── */
+    .geo-status {
+      background:var(--primary-lt); border:1.5px solid var(--primary); border-radius:7px;
+      padding:5px 7px; font-size:8.5px; color:var(--primary);
+      display:flex; align-items:center; gap:4px; margin-bottom:6px;
+    }
+    .geo-dot { width:5px; height:5px; background:var(--primary); border-radius:50%; }
+
+    /* ── pills ── */
+    .pills { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
+    .pill { background:var(--surface); border:1.5px solid var(--border); border-radius:20px; padding:3px 7px; font-size:8.5px; font-weight:600; color:var(--text-sec); white-space:nowrap; }
+    .pill.selected { background:var(--primary); border-color:var(--primary); color:#fff; }
+
+    /* ── section label ── */
+    .section-label { font-size:8.5px; font-weight:700; color:var(--text-sec); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:4px; margin-top:7px; }
+    .section-label:first-child { margin-top:0; }
+
+    /* ── divider ── */
+    hr.divider { border:none; border-top:1px solid var(--border); margin:6px 0; }
+
+    /* ── image upload ── */
+    .img-upload { border:2px dashed var(--border); border-radius:8px; padding:10px; text-align:center; margin-bottom:6px; }
+    .img-upload.has-image { border-style:solid; border-color:var(--primary); background:var(--primary-lt); padding:5px; }
+    .img-preview { width:100%; height:50px; border-radius:5px; background:linear-gradient(135deg, #a8d5a2, #5a9e60); display:flex; align-items:center; justify-content:center; font-size:16px; }
+
+    /* ── info banner ── */
+    .info-banner { background:var(--warning-lt); border:1.5px solid var(--warning); border-radius:7px; padding:6px 7px; font-size:8.5px; color:#7d4e00; line-height:1.4; margin-bottom:6px; display:flex; gap:4px; }
+
+    /* ── success ── */
+    .success-icon { width:44px; height:44px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; margin:8px auto 8px; }
+    .success-title { text-align:center; font-size:13px; font-weight:700; color:var(--text); margin-bottom:3px; }
+    .success-desc  { text-align:center; font-size:8.5px; color:var(--text-sec); line-height:1.4; margin-bottom:10px; }
+
+    /* ── pending ── */
+    .pending-icon { width:44px; height:44px; background:var(--warning-lt); border:2px solid var(--warning); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; margin:16px auto 8px; }
+
+    /* ── bullet list ── */
+    .bullet-item { display:flex; align-items:flex-start; gap:4px; font-size:8.5px; color:var(--text); padding:2px 0; }
+    .bullet-dot  { width:4px; height:4px; background:var(--accent-dk); border-radius:50%; margin-top:3px; flex-shrink:0; }
+
+    /* ── radio ── */
+    .radio { width:13px; height:13px; border:1.5px solid var(--border); border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+    .radio.checked { border-color:var(--primary); }
+    .radio.checked::after { content:''; width:5px; height:5px; background:var(--primary); border-radius:50%; }
+
+    /* ── badge ── */
+    .badge { display:inline-block; background:var(--primary-lt); border:1px solid var(--primary); border-radius:4px; padding:1px 4px; font-size:7.5px; font-weight:700; color:var(--primary); margin-left:4px; }
+    .badge.stripe { background:var(--stripe-lt); border-color:var(--stripe); color:var(--stripe); }
+    .badge.mor    { background:var(--mor-lt);    border-color:var(--mor);    color:var(--mor); }
+
+    /* ── buttons ── */
+    .btn { display:block; width:100%; background:var(--primary); color:#fff; border:none; border-radius:9px; padding:8px; font-size:10.5px; font-weight:700; text-align:center; margin-top:auto; cursor:pointer; }
+    .btn.accent-btn  { background:var(--accent); color:var(--text); }
+    .btn.stripe-btn  { background:var(--stripe); color:#fff; }
+    .btn.mor-btn     { background:var(--mor);    color:#fff; }
+    .btn.disabled    { background:#ccc; color:#888; }
+    .spacer { flex:1; }
+
+    /* ── arrow ── */
+    .arrow { color:var(--accent); font-size:22px; display:flex; align-items:center; padding-top:50px; flex-shrink:0; }
+
+    /* ── branch label ── */
+    .branch-label { background:#252540; border-radius:8px; padding:6px 10px; color:#aaa; font-size:10px; font-weight:600; text-align:center; margin-bottom:10px; }
+    .branch-label span { color:var(--accent); }
+
+    /* ── legend ── */
+    .legend { margin-top:40px; padding:18px 20px; background:#252540; border-radius:14px; max-width:900px; margin-left:auto; margin-right:auto; }
+    .legend-title { color:#fff; font-size:12px; font-weight:700; margin-bottom:10px; }
+    .legend-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .legend-item { font-size:10px; color:#aaa; }
+    .legend-item strong { color:#fff; }
+
+    .scroll-hint { text-align:center; color:#666; font-size:11px; margin-bottom:20px; }
+  </style>
+</head>
+<body>
+
+<h1>StillFresh — Vendor Onboarding</h1>
+<p class="subtitle">Updated flow · UNIQUE and CHAIN paths · Stripe vs MOR branching</p>
+<p class="scroll-hint">← Scroll horizontally to see all steps →</p>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SHARED START: Pending + Type Selection
+════════════════════════════════════════════════════════════════ -->
+<div class="flow-section">
+  <div class="flow-title">All vendors — start here</div>
+  <div class="flow-row">
+
+    <!-- Pending -->
+    <div class="step-col">
+      <div class="step-label">Status: PENDING</div>
+      <div class="step-name">Waiting for Approval</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="pending-icon">⏳</div>
+          <div class="success-title">Application Received</div>
+          <div class="success-desc">Our team is reviewing your application. You'll be notified once approved.</div>
+          <div class="card">
+            <div class="card-title">📋 What happens next?</div>
+            <div style="margin-top:5px;">
+              <div class="bullet-item"><div class="bullet-dot"></div>Admin reviews your details (1–2 days)</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>You'll be notified by email + push</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>Then complete 4 quick setup steps</div>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div class="btn disabled">Waiting for Approval…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">›</div>
+
+    <!-- Type Selection: UNIQUE -->
+    <div class="step-col">
+      <div class="step-label">Step 1 · UNIQUE</div>
+      <div class="step-name">Single Location Selected</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot active"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+          </div>
+          <div class="screen-title">What type of vendor are you?</div>
+          <div class="screen-desc">This determines how your locations and payments are managed.</div>
+          <div class="card selected">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="radio checked"></div>
+              <div>
+                <div class="card-title">🏪 Single Location</div>
+                <div class="card-desc">One venue, one account. Ideal for independent restaurants, cafes, bakeries.</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="radio"></div>
+              <div>
+                <div class="card-title">🏢 Chain / Multi-Location</div>
+                <div class="card-desc">Manage multiple branches under one brand.</div>
+              </div>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div class="btn">Continue →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">›</div>
+
+    <!-- Type Selection: CHAIN -->
+    <div class="step-col">
+      <div class="step-label">Step 1 · CHAIN</div>
+      <div class="step-name">Chain Selected + Name</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot active"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+          </div>
+          <div class="screen-title">What type of vendor are you?</div>
+          <div class="screen-desc">This determines how your locations and payments are managed.</div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="radio"></div>
+              <div>
+                <div class="card-title">🏪 Single Location</div>
+                <div class="card-desc">One venue, one account.</div>
+              </div>
+            </div>
+          </div>
+          <div class="card selected">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div class="radio checked"></div>
+              <div>
+                <div class="card-title">🏢 Chain / Multi-Location</div>
+                <div class="card-desc">Manage multiple branches under one brand.</div>
+              </div>
+            </div>
+          </div>
+          <div class="input-group" style="margin-top:6px;">
+            <div class="input-label">Chain name *</div>
+            <div class="input-field filled">Pekara Šumadija</div>
+          </div>
+          <div class="spacer"></div>
+          <div class="btn">Continue →</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     UNIQUE PATH
+════════════════════════════════════════════════════════════════ -->
+<div class="flow-section">
+  <div class="flow-title">🏪 Single Location (UNIQUE) path</div>
+  <div class="flow-row">
+
+    <!-- Profile -->
+    <div class="step-col">
+      <div class="step-label">Step 2 of 4</div>
+      <div class="step-name">Business Profile</div>
+      <div class="phone" style="min-height:500px;">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot done"></div>
+            <div class="progress-dot active"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+          </div>
+          <div class="screen-title">Tell us about your business</div>
+          <div class="screen-desc">Helps customers find you and builds trust in your listing.</div>
+
+          <div class="section-label">Business type *</div>
+          <div class="pills">
+            <div class="pill selected">🍽 Restaurant</div>
+            <div class="pill">☕ Cafe</div>
+            <div class="pill">🥐 Bakery</div>
+            <div class="pill">🛒 Grocery</div>
+            <div class="pill">🚚 Food Truck</div>
+            <div class="pill">🎪 Catering</div>
+            <div class="pill">🌾 Farm</div>
+            <div class="pill">• Other</div>
+          </div>
+
+          <hr class="divider"/>
+
+          <div class="section-label">Food you typically save *</div>
+          <div class="pills">
+            <div class="pill selected">🥬 Fresh produce</div>
+            <div class="pill selected">🍞 Baked goods</div>
+            <div class="pill">🥛 Dairy</div>
+            <div class="pill selected">🍱 Prepared meals</div>
+            <div class="pill">🥫 Pantry</div>
+            <div class="pill">🧊 Frozen</div>
+            <div class="pill">🥤 Beverages</div>
+            <div class="pill">🍪 Snacks</div>
+            <div class="pill">🌿 Organic</div>
+            <div class="pill">🌾 Gluten-free</div>
+            <div class="pill">🌱 Vegan</div>
+          </div>
+
+          <hr class="divider"/>
+
+          <div class="section-label">Operating days</div>
+          <div class="pills">
+            <div class="pill selected">Mon</div>
+            <div class="pill selected">Tue</div>
+            <div class="pill selected">Wed</div>
+            <div class="pill selected">Thu</div>
+            <div class="pill selected">Fri</div>
+            <div class="pill">Sat</div>
+            <div class="pill">Sun</div>
+          </div>
+
+          <hr class="divider"/>
+
+          <div class="section-label">Certifications</div>
+          <div class="pills">
+            <div class="pill">🌿 Organic</div>
+            <div class="pill">☕ Fair trade</div>
+            <div class="pill selected">📍 Local</div>
+            <div class="pill">🌾 Sustainable</div>
+            <div class="pill selected">♻️ Zero waste</div>
+            <div class="pill">🌍 Carbon neutral</div>
+            <div class="pill">🏆 B Corp</div>
+          </div>
+
+          <hr class="divider"/>
+
+          <div class="section-label">Business photo *</div>
+          <div class="img-upload has-image">
+            <div class="img-preview">🏪</div>
+          </div>
+          <div style="font-size:7.5px;color:var(--text-sec);margin-bottom:6px;text-align:center;">Tap to change · JPG/PNG · max 5MB</div>
+
+          <div class="btn">Continue →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">›</div>
+
+    <!-- Payout model check — UNIQUE goes straight to payment, INDIVIDUAL is default -->
+    <div class="step-col">
+      <div class="step-label">Step 3 of 4</div>
+      <div class="step-name">Payment Setup<br/>(Stripe — CONNECT)</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot active"></div>
+            <div class="progress-dot"></div>
+          </div>
+          <div class="screen-title">Set up payments</div>
+          <div class="screen-desc">Individual account detected. Connect your Stripe account to receive payouts.</div>
+          <div class="card stripe-card">
+            <div class="card-title">💳 Stripe Connect<span class="badge stripe">CONNECT</span></div>
+            <div class="card-desc" style="margin-top:3px;">Industry-standard payment processing. Payouts go directly to your bank account.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">⚡ How it works</div>
+            <div style="margin-top:4px;">
+              <div class="bullet-item"><div class="bullet-dot"></div>Click below to open Stripe's setup flow</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>Enter your business & bank details there</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>Return here automatically when done</div>
+            </div>
+          </div>
+          <div class="info-banner">
+            <span>🔒</span> StillFresh never stores your banking details. All data is handled securely by Stripe.
+          </div>
+          <div class="spacer"></div>
+          <div class="btn stripe-btn">Open Stripe Setup →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">›</div>
+
+    <!-- OR: MOR setup -->
+    <div class="step-col">
+      <div class="step-label">Step 3 of 4 · alt</div>
+      <div class="step-name">Payment Setup<br/>(Bank — MOR)</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot active"></div>
+            <div class="progress-dot"></div>
+          </div>
+          <div class="screen-title">Set up payments</div>
+          <div class="screen-desc">Enter your bank account details to receive payouts directly.</div>
+          <div class="card mor-card">
+            <div class="card-title">🏦 Bank Transfer<span class="badge mor">MOR</span></div>
+            <div class="card-desc" style="margin-top:3px;">Payouts sent directly to your bank account via bank transfer.</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Account holder name *</div>
+            <div class="input-field filled">Marko Petrović</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">IBAN *</div>
+            <div class="input-field filled">RS35105008123123</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Bank name *</div>
+            <div class="input-field filled">Raiffeisen Bank</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">SWIFT / BIC</div>
+            <div class="input-field">RZBSRSBG</div>
+          </div>
+          <div class="spacer"></div>
+          <div class="btn mor-btn">Save Bank Details →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">›</div>
+
+    <!-- Complete -->
+    <div class="step-col">
+      <div class="step-label">Step 4 of 4</div>
+      <div class="step-name">All Done!</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+          </div>
+          <div class="success-icon">✅</div>
+          <div class="success-title">You're all set!</div>
+          <div class="success-desc">Your StillFresh vendor account is ready. Start saving food and earning today.</div>
+          <div class="card">
+            <div class="card-title">🚀 What you can do now</div>
+            <div style="margin-top:4px;">
+              <div class="bullet-item"><div class="bullet-dot"></div>Create your first surprise bag offer</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>View orders and analytics</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>Manage payment settings</div>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div class="btn">Go to Dashboard →</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CHAIN PATH
+════════════════════════════════════════════════════════════════ -->
+<div class="flow-section">
+  <div class="flow-title">🏢 Chain (CHAIN) path — after type selection</div>
+  <div class="flow-row">
+
+    <!-- HQ Setup -->
+    <div class="step-col">
+      <div class="step-label">Step 2 of 5</div>
+      <div class="step-name">Headquarters Setup</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot done"></div>
+            <div class="progress-dot active"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+          </div>
+          <div class="screen-title">Set up headquarters</div>
+          <div class="screen-desc">Your main location details. Address is geocoded automatically.</div>
+          <div class="input-group">
+            <div class="input-label">Location name *</div>
+            <div class="input-field filled">Pekara Šumadija — Centar</div>
+          </div>
+          <div class="input-row">
+            <div class="input-group">
+              <div class="input-label">Street *</div>
+              <div class="input-field filled">Knez Mihailova</div>
+            </div>
+            <div class="input-group" style="max-width:52px;">
+              <div class="input-label">No.</div>
+              <div class="input-field filled">12</div>
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="input-group">
+              <div class="input-label">City *</div>
+              <div class="input-field filled">Beograd</div>
+            </div>
+            <div class="input-group" style="max-width:56px;">
+              <div class="input-label">ZIP *</div>
+              <div class="input-field filled">11000</div>
+            </div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Country *</div>
+            <div class="input-field filled">Serbia</div>
+          </div>
+          <div class="geo-status">
+            <div class="geo-dot"></div>📍 Coordinates found (44.8125, 20.4612)
+          </div>
+          <div class="btn">Continue →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">›</div>
+
+    <!-- Banking Model — CHAIN only -->
+    <div class="step-col">
+      <div class="step-label">Step 3 of 5 · CHAIN only</div>
+      <div class="step-name">Banking Model</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot active"></div>
+            <div class="progress-dot"></div>
+            <div class="progress-dot"></div>
+          </div>
+          <div class="screen-title">How will payments work?</div>
+          <div class="screen-desc">Choose how payments are distributed across your chain locations.</div>
+
+          <div class="card selected">
+            <div style="display:flex;align-items:flex-start;gap:6px;">
+              <div class="radio checked" style="margin-top:2px;"></div>
+              <div>
+                <div class="card-title">🔗 Shared Account</div>
+                <div class="card-desc">All locations use the HQ Stripe account. Payments route to one place. Simpler to manage.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="display:flex;align-items:flex-start;gap:6px;">
+              <div class="radio" style="margin-top:2px;"></div>
+              <div>
+                <div class="card-title">💳 Individual Accounts</div>
+                <div class="card-desc">Each location has its own Stripe account and receives payments independently.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="spacer"></div>
+          <div class="btn">Continue →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">›</div>
+
+    <!-- Profile — CHAIN -->
+    <div class="step-col">
+      <div class="step-label">Step 4 of 5</div>
+      <div class="step-name">Business Profile</div>
+      <div class="phone" style="min-height:500px;">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot active"></div>
+            <div class="progress-dot"></div>
+          </div>
+          <div class="screen-title">Tell us about your business</div>
+          <div class="screen-desc">Helps customers find you and builds trust in your listing.</div>
+
+          <div class="section-label">Business type *</div>
+          <div class="pills">
+            <div class="pill">🍽 Restaurant</div>
+            <div class="pill selected">🥐 Bakery</div>
+            <div class="pill">☕ Cafe</div>
+            <div class="pill">🛒 Grocery</div>
+            <div class="pill">🚚 Food Truck</div>
+            <div class="pill">🎪 Catering</div>
+            <div class="pill">🌾 Farm</div>
+            <div class="pill">• Other</div>
+          </div>
+
+          <hr class="divider"/>
+
+          <div class="section-label">Food you typically save *</div>
+          <div class="pills">
+            <div class="pill">🥬 Fresh produce</div>
+            <div class="pill selected">🍞 Baked goods</div>
+            <div class="pill">🥛 Dairy</div>
+            <div class="pill">🍱 Prepared meals</div>
+            <div class="pill">🥫 Pantry</div>
+            <div class="pill">🥤 Beverages</div>
+            <div class="pill">🍪 Snacks</div>
+          </div>
+
+          <hr class="divider"/>
+
+          <div class="section-label">Operating days</div>
+          <div class="pills">
+            <div class="pill selected">Mon</div>
+            <div class="pill selected">Tue</div>
+            <div class="pill selected">Wed</div>
+            <div class="pill selected">Thu</div>
+            <div class="pill selected">Fri</div>
+            <div class="pill selected">Sat</div>
+            <div class="pill">Sun</div>
+          </div>
+
+          <hr class="divider"/>
+
+          <div class="section-label">Certifications</div>
+          <div class="pills">
+            <div class="pill selected">🌿 Organic</div>
+            <div class="pill">☕ Fair trade</div>
+            <div class="pill selected">📍 Local</div>
+            <div class="pill">♻️ Zero waste</div>
+          </div>
+
+          <hr class="divider"/>
+
+          <div class="section-label">Business photo *</div>
+          <div class="img-upload has-image">
+            <div class="img-preview">🥐</div>
+          </div>
+          <div style="font-size:7.5px;color:var(--text-sec);margin-bottom:6px;text-align:center;">Tap to change · JPG/PNG · max 5MB</div>
+
+          <div class="btn">Continue →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">›</div>
+
+    <!-- Payment: CONNECT (Stripe) -->
+    <div class="step-col">
+      <div class="step-label">Step 5 of 5</div>
+      <div class="step-name">Payment Setup<br/>(Stripe — CONNECT)</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot active"></div>
+          </div>
+          <div class="screen-title">Set up payments</div>
+          <div class="screen-desc">Connect your Stripe account to start receiving payouts.</div>
+          <div class="card stripe-card">
+            <div class="card-title">💳 Stripe Connect<span class="badge stripe">CONNECT</span></div>
+            <div class="card-desc" style="margin-top:3px;">Industry-standard payment processing. Payouts go directly to your bank.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">⚡ How it works</div>
+            <div style="margin-top:4px;">
+              <div class="bullet-item"><div class="bullet-dot"></div>Opens Stripe's secure setup in browser</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>Enter business & bank details there</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>Returns here automatically when done</div>
+            </div>
+          </div>
+          <div class="info-banner">
+            <span>🔒</span> StillFresh never stores your banking details.
+          </div>
+          <div class="spacer"></div>
+          <div class="btn stripe-btn">Open Stripe Setup →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">›</div>
+
+    <!-- OR: MOR for CHAIN -->
+    <div class="step-col">
+      <div class="step-label">Step 5 of 5 · alt</div>
+      <div class="step-name">Payment Setup<br/>(Bank — MOR)</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot active"></div>
+          </div>
+          <div class="screen-title">Set up payments</div>
+          <div class="screen-desc">Enter your bank account details to receive payouts directly.</div>
+          <div class="card mor-card">
+            <div class="card-title">🏦 Bank Transfer<span class="badge mor">MOR</span></div>
+            <div class="card-desc" style="margin-top:3px;">Payouts sent directly to your bank via transfer.</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Account holder name *</div>
+            <div class="input-field filled">Pekara Šumadija d.o.o.</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">IBAN *</div>
+            <div class="input-field filled">RS35105008123123</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">Bank name *</div>
+            <div class="input-field filled">Raiffeisen Bank</div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">SWIFT / BIC</div>
+            <div class="input-field">RZBSRSBG</div>
+          </div>
+          <div class="spacer"></div>
+          <div class="btn mor-btn">Save Bank Details →</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow">›</div>
+
+    <!-- Complete CHAIN -->
+    <div class="step-col">
+      <div class="step-label">Complete</div>
+      <div class="step-name">All Done!</div>
+      <div class="phone">
+        <div class="screen">
+          <div class="progress-bar">
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+            <div class="progress-dot done"></div>
+          </div>
+          <div class="success-icon">✅</div>
+          <div class="success-title">You're all set!</div>
+          <div class="success-desc">Your chain is ready. Manage locations, offers, and analytics from the dashboard.</div>
+          <div class="card">
+            <div class="card-title">🚀 What you can do now</div>
+            <div style="margin-top:4px;">
+              <div class="bullet-item"><div class="bullet-dot"></div>Create surprise bag offers</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>Add more chain locations</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>Manage team members</div>
+              <div class="bullet-item"><div class="bullet-dot"></div>View analytics</div>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div class="btn">Go to Dashboard →</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-title">Flow rules</div>
+  <div class="legend-grid">
+    <div class="legend-item">🏪 <strong>UNIQUE</strong>: skips Banking Model screen — Individual is the default</div>
+    <div class="legend-item">🏢 <strong>CHAIN</strong>: shows Banking Model (SHARED or INDIVIDUAL)</div>
+    <div class="legend-item">💳 <strong>CONNECT</strong> payout model → Stripe Connect WebView/browser flow</div>
+    <div class="legend-item">🏦 <strong>MOR</strong> payout model → manual bank account form</div>
+    <div class="legend-item">📡 Payout model determined by <code style="color:var(--accent)">GET /vendors/{vendorId}/payout-model</code></div>
+    <div class="legend-item">🔒 Back navigation <strong>disabled</strong> throughout entire flow</div>
+    <div class="legend-item">🗺 Geocoding auto-triggered 1s after address fields complete</div>
+    <div class="legend-item">🖼 Business image uploaded to server → <code style="color:var(--accent)">imageUrl</code> saved in vendor DB</div>
+    <div class="legend-item">🎛 Business type, food types, certifications: <strong>frontend constants</strong> (no API call)</div>
+    <div class="legend-item">📋 Profile completion is now <strong>required</strong> (not skippable)</div>
+  </div>
+</div>
+
+</body>
+</html>

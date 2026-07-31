@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StillFresh — Analitika (Mockup)</title>
+  <style>
+    /* ── Reset & page ────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #d1d1d6;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    }
+
+    /* ── Phone shell ─────────────────────────────────────────────────────── */
+    .phone {
+      width: 390px;
+      min-height: 844px;
+      background: #f2f2f7;
+      border-radius: 48px;
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.35), inset 0 0 0 1.5px rgba(255,255,255,0.15);
+      position: relative;
+    }
+
+    /* Status bar */
+    .status-bar {
+      height: 44px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1c1c1e;
+    }
+    .status-bar .time { font-size: 15px; font-weight: 700; }
+    .status-icons { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+
+    /* Scrollable content */
+    .screen {
+      height: 760px;
+      overflow-y: auto;
+      background: #f2f2f7;
+      scrollbar-width: none;
+    }
+    .screen::-webkit-scrollbar { display: none; }
+
+    /* ── Colors ──────────────────────────────────────────────────────────── */
+    :root {
+      --primary:       #2e7d32;
+      --primary-light: #43a047;
+      --primary-bg:    #e8f5e9;
+      --surface:       #ffffff;
+      --bg:            #f2f2f7;
+      --border:        #e5e5ea;
+      --text-primary:  #1c1c1e;
+      --text-secondary:#6e6e73;
+      --success:       #34c759;
+      --warning:       #ff9500;
+      --error:         #ff3b30;
+      --separator:     #f2f2f7;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────────── */
+    .header {
+      background: var(--surface);
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+    }
+
+    /* Period selector */
+    .period-tabs {
+      display: flex;
+      background: #e5e5ea;
+      border-radius: 10px;
+      padding: 2px;
+      gap: 0;
+    }
+    .period-tab {
+      flex: 1;
+      text-align: center;
+      padding: 7px 0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .period-tab.active {
+      background: var(--surface);
+      color: var(--text-primary);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    }
+
+    /* ── Section label ───────────────────────────────────────────────────── */
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 20px 20px 7px;
+    }
+
+    /* ── Metric cards ────────────────────────────────────────────────────── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 0 12px;
+    }
+    .metric-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .metric-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+    .metric-value.green { color: var(--primary); }
+    .metric-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+    .metric-trend-up {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--success);
+      margin-top: 4px;
+    }
+    .metric-trend-down {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--error);
+      margin-top: 4px;
+    }
+
+    /* ── Revenue chart ───────────────────────────────────────────────────── */
+    .chart-card {
+      background: var(--surface);
+      margin: 0 12px;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .chart-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 100px;
+    }
+    .chart-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .chart-bar-wrap {
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      flex: 1;
+    }
+    .chart-bar {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      background: var(--primary-light);
+      min-height: 4px;
+      position: relative;
+      transition: height 0.4s ease;
+    }
+    .chart-bar.today { background: var(--primary); }
+    .chart-bar-label {
+      font-size: 9px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      text-align: center;
+    }
+    .chart-bar-value {
+      font-size: 8px;
+      color: var(--primary);
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 2px;
+    }
+
+    /* ── Offer performance ───────────────────────────────────────────────── */
+    .list-card {
+      background: var(--surface);
+      margin: 0 12px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .offer-row {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--separator);
+    }
+    .offer-row:last-child { border-bottom: none; }
+    .offer-row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .offer-name-wrap { display: flex; align-items: center; gap: 6px; }
+    .offer-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+    .badge-active { background: var(--primary-bg); color: var(--primary); }
+    .badge-inactive { background: #f2f2f7; color: var(--text-secondary); }
+    .offer-stats {
+      text-align: right;
+    }
+    .offer-stat-main {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .offer-stat-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .progress-track {
+      flex: 1;
+      height: 5px;
+      background: #e5e5ea;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--primary-light);
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .progress-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    /* ── Ratings ─────────────────────────────────────────────────────────── */
+    .ratings-card {
+      background: var(--surface);
+      margin: 0 12px;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .ratings-top {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .rating-big {
+      text-align: center;
+    }
+    .rating-big-num {
+      font-size: 40px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .rating-stars {
+      font-size: 14px;
+      color: #ff9500;
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+    .rating-count {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .rating-breakdown {
+      flex: 1;
+    }
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+    .breakdown-row:last-child { margin-bottom: 0; }
+    .breakdown-star {
+      font-size: 11px;
+      color: var(--text-secondary);
+      width: 22px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .breakdown-track {
+      flex: 1;
+      height: 5px;
+      background: #e5e5ea;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .breakdown-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: #ff9500;
+    }
+    .breakdown-pct {
+      font-size: 11px;
+      color: var(--text-secondary);
+      width: 26px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── Payout balance ──────────────────────────────────────────────────── */
+    .balance-card {
+      background: var(--surface);
+      margin: 0 12px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .balance-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--separator);
+    }
+    .balance-row:last-child { border-bottom: none; }
+    .balance-row-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .balance-row-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .balance-row-value.highlight { color: var(--primary); }
+    .balance-row-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-align: right;
+      margin-top: 1px;
+    }
+    .balance-right { text-align: right; }
+
+    /* ── Show more button ────────────────────────────────────────────────── */
+    .show-more {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 11px;
+      background: var(--primary-bg);
+      border-top: 1px solid #c8e6c9;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* ── Bottom tab bar ──────────────────────────────────────────────────── */
+    .tab-bar {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      height: 82px;
+      padding-bottom: 20px;
+    }
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+    }
+    .tab-icon { width: 24px; height: 24px; }
+    .tab-icon svg { width: 24px; height: 24px; }
+    .tab-label { font-size: 10px; font-weight: 500; color: var(--text-secondary); }
+    .tab-item.active .tab-label { color: var(--primary); font-weight: 600; }
+
+    /* bottom spacer */
+    .bottom-spacer { height: 20px; }
+
+    /* ── Label note ──────────────────────────────────────────────────────── */
+    .note {
+      max-width: 390px;
+      margin: 16px auto 0;
+      font-size: 12px;
+      color: #555;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .note strong { color: #333; }
+  </style>
+</head>
+<body>
+
+<div style="display:flex; flex-direction:column; align-items:center;">
+
+  <div class="phone">
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="status-icons">
+        <span>●●●</span>
+        <span>WiFi</span>
+        <span>🔋</span>
+      </div>
+    </div>
+
+    <!-- Scrollable screen -->
+    <div class="screen" id="screen">
+
+      <!-- Header -->
+      <div class="header">
+        <div class="header-title">Analitika</div>
+        <div class="period-tabs">
+          <div class="period-tab active" onclick="setPeriod('today', this)">Danas</div>
+          <div class="period-tab" onclick="setPeriod('week', this)">Nedelja</div>
+          <div class="period-tab" onclick="setPeriod('month', this)">Mesec</div>
+        </div>
+      </div>
+
+      <!-- ── Summary metrics ───────────────────────────────────────────── -->
+      <div class="section-label">Pregled perioda</div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Prihod</div>
+          <div class="metric-value" id="m-revenue">1.890 RSD</div>
+          <div class="metric-trend-up" id="m-revenue-trend">↑ 12%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Prodato</div>
+          <div class="metric-value" id="m-units">7 jed.</div>
+          <div class="metric-sub" id="m-units-sub">od 10 dostupnih</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Aktivne narudžbine</div>
+          <div class="metric-value" id="m-orders">3</div>
+          <div class="metric-sub">preuzimanje danas</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Prosečna ocena</div>
+          <div class="metric-value" id="m-rating">4.6 ★</div>
+          <div class="metric-sub" id="m-rating-sub">127 ocena</div>
+        </div>
+      </div>
+
+      <!-- ── Revenue trend chart ───────────────────────────────────────── -->
+      <div class="section-label" id="chart-title">Prihod po satima</div>
+      <div class="chart-card">
+        <div class="chart-bars" id="chart-bars">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- ── Offer performance ─────────────────────────────────────────── -->
+      <div class="section-label">Performanse ponuda</div>
+      <div class="list-card">
+
+        <div class="offer-row">
+          <div class="offer-row-top">
+            <div class="offer-name-wrap">
+              <span class="offer-name">Pekarska torba</span>
+              <span class="badge badge-active">Aktivna</span>
+            </div>
+            <div class="offer-stats">
+              <div class="offer-stat-main" id="o1-rev">1.260 RSD</div>
+              <div class="offer-stat-sub" id="o1-units">9 jed.</div>
+            </div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track">
+              <div class="progress-fill" id="o1-bar" style="width:90%"></div>
+            </div>
+            <span class="progress-label" id="o1-pct">Popunjenost: 90%</span>
+          </div>
+        </div>
+
+        <div class="offer-row">
+          <div class="offer-row-top">
+            <div class="offer-name-wrap">
+              <span class="offer-name">Ručak iznenađenja</span>
+              <span class="badge badge-active">Aktivna</span>
+            </div>
+            <div class="offer-stats">
+              <div class="offer-stat-main" id="o2-rev">840 RSD</div>
+              <div class="offer-stat-sub" id="o2-units">4 jed.</div>
+            </div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track">
+              <div class="progress-fill" id="o2-bar" style="width:67%"></div>
+            </div>
+            <span class="progress-label" id="o2-pct">Popunjenost: 67%</span>
+          </div>
+        </div>
+
+        <div class="offer-row">
+          <div class="offer-row-top">
+            <div class="offer-name-wrap">
+              <span class="offer-name">Večernja torba</span>
+              <span class="badge badge-inactive">Neaktivna</span>
+            </div>
+            <div class="offer-stats">
+              <div class="offer-stat-main" id="o3-rev">420 RSD</div>
+              <div class="offer-stat-sub" id="o3-units">2 jed.</div>
+            </div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track">
+              <div class="progress-fill" id="o3-bar" style="width:40%"></div>
+            </div>
+            <span class="progress-label" id="o3-pct">Popunjenost: 40%</span>
+          </div>
+        </div>
+
+        <div class="show-more">
+          Prikaži sve ponude &nbsp;›
+        </div>
+      </div>
+
+      <!-- ── Ratings ───────────────────────────────────────────────────── -->
+      <div class="section-label">Ocene kupaca</div>
+      <div class="ratings-card">
+        <div class="ratings-top">
+          <div class="rating-big">
+            <div class="rating-big-num">4.6</div>
+            <div class="rating-stars">★★★★★</div>
+            <div class="rating-count">127 ocena</div>
+          </div>
+          <div class="rating-breakdown">
+            <div class="breakdown-row">
+              <span class="breakdown-star">5★</span>
+              <div class="breakdown-track"><div class="breakdown-fill" style="width:72%"></div></div>
+              <span class="breakdown-pct">72%</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-star">4★</span>
+              <div class="breakdown-track"><div class="breakdown-fill" style="width:18%"></div></div>
+              <span class="breakdown-pct">18%</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-star">3★</span>
+              <div class="breakdown-track"><div class="breakdown-fill" style="width:6%"></div></div>
+              <span class="breakdown-pct">6%</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-star">2★</span>
+              <div class="breakdown-track"><div class="breakdown-fill" style="width:2%"></div></div>
+              <span class="breakdown-pct">2%</span>
+            </div>
+            <div class="breakdown-row">
+              <span class="breakdown-star">1★</span>
+              <div class="breakdown-track"><div class="breakdown-fill" style="width:2%"></div></div>
+              <span class="breakdown-pct">2%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Payout balance ────────────────────────────────────────────── -->
+      <div class="section-label">Isplate</div>
+      <div class="balance-card">
+        <div class="balance-row">
+          <span class="balance-row-label">Neraspodeljeno</span>
+          <div class="balance-right">
+            <div class="balance-row-value highlight" id="b-unsettled">3.200 RSD</div>
+          </div>
+        </div>
+        <div class="balance-row">
+          <span class="balance-row-label">Poslednja isplata</span>
+          <div class="balance-right">
+            <div class="balance-row-value" id="b-last-amount">8.900 RSD</div>
+            <div class="balance-row-sub" id="b-last-date">12. apr 2026.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-spacer"></div>
+    </div><!-- /screen -->
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <!-- Dashboard: grid-outline -->
+      <div class="tab-item">
+        <span class="tab-icon">
+          <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="48" y="48" width="176" height="176" rx="28" stroke="#6e6e73" stroke-width="36" fill="none"/>
+            <rect x="288" y="48" width="176" height="176" rx="28" stroke="#6e6e73" stroke-width="36" fill="none"/>
+            <rect x="48" y="288" width="176" height="176" rx="28" stroke="#6e6e73" stroke-width="36" fill="none"/>
+            <rect x="288" y="288" width="176" height="176" rx="28" stroke="#6e6e73" stroke-width="36" fill="none"/>
+          </svg>
+        </span>
+        <span class="tab-label">Kontrolna tabla</span>
+      </div>
+      <!-- Offers: pricetag-outline -->
+      <div class="tab-item">
+        <span class="tab-icon">
+          <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M304 48H204a48 48 0 00-33.94 14.06L56 176a48 48 0 000 67.88l168 168a48 48 0 0067.88 0l114.06-114.06A48 48 0 00420 264V164a116 116 0 00-116-116z" stroke="#6e6e73" stroke-width="36" stroke-linejoin="round" fill="none"/>
+            <circle cx="336" cy="176" r="28" fill="#6e6e73"/>
+          </svg>
+        </span>
+        <span class="tab-label">Ponude</span>
+      </div>
+      <!-- Analytics: bar-chart (active) -->
+      <div class="tab-item active">
+        <span class="tab-icon">
+          <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="64"  y="256" width="80" height="192" rx="12" fill="#2e7d32"/>
+            <rect x="216" y="128" width="80" height="320" rx="12" fill="#2e7d32"/>
+            <rect x="368" y="64"  width="80" height="384" rx="12" fill="#2e7d32"/>
+            <line x1="32" y1="464" x2="480" y2="464" stroke="#2e7d32" stroke-width="32" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="tab-label">Analitika</span>
+      </div>
+      <!-- Profile: person-outline -->
+      <div class="tab-item">
+        <span class="tab-icon">
+          <svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="256" cy="160" r="96" stroke="#6e6e73" stroke-width="36" fill="none"/>
+            <path d="M80 464c0-97.2 78.8-176 176-176s176 78.8 176 176" stroke="#6e6e73" stroke-width="36" stroke-linecap="round" fill="none"/>
+          </svg>
+        </span>
+        <span class="tab-label">Profil</span>
+      </div>
+    </div>
+  </div><!-- /phone -->
+
+  <p class="note">
+    <strong>Mockup — Analitika tab</strong><br>
+    Kliknite na tabove <em>Danas / Sedmica / Mesec</em> da vidite kako se podaci menjaju.<br>
+    Sve vrednosti su ilustrativne. Boja: zelena (#2e7d32).
+  </p>
+
+</div><!-- /outer -->
+
+<script>
+  /* ── Mock data per period ────────────────────────────────────────────── */
+  const DATA = {
+    today: {
+      revenue:      '1.890 RSD',
+      revenueTrend: '↑ 12%',
+      revTrendClass:'metric-trend-up',
+      units:        '7 jed.',
+      unitsSub:     'od 10 dostupnih',
+      orders:       '3',
+      rating:       '4.6 ★',
+      ratingSub:    '127 ocena',
+      chartTitle:   'Prihod po satima',
+      chartBars: [
+        { label: '8h',  val: 210,  max: 800 },
+        { label: '10h', val: 420,  max: 800 },
+        { label: '12h', val: 630,  max: 800, today: true },
+        { label: '14h', val: 380,  max: 800 },
+        { label: '16h', val: 160,  max: 800 },
+        { label: '18h', val: 90,   max: 800 },
+      ],
+      offers: [
+        { rev: '1.260 RSD', units: '9 jed.', pct: 90 },
+        { rev: '840 RSD',   units: '4 jed.', pct: 67 },
+        { rev: '420 RSD',   units: '2 jed.', pct: 40 },
+      ],
+      unsettled:   '3.200 RSD',
+      lastAmount:  '8.900 RSD',
+      lastDate:    '12. apr 2026.',
+    },
+    week: {
+      revenue:      '12.450 RSD',
+      revenueTrend: '↑ 8%',
+      revTrendClass:'metric-trend-up',
+      units:        '47 jed.',
+      unitsSub:     'ove sedmice',
+      orders:       '3',
+      rating:       '4.6 ★',
+      ratingSub:    '127 ocena',
+      chartTitle:   'Prihod po danima',
+      chartBars: [
+        { label: 'Pon', val: 1800, max: 2400 },
+        { label: 'Uto', val: 2100, max: 2400 },
+        { label: 'Sre', val: 1500, max: 2400 },
+        { label: 'Čet', val: 2400, max: 2400 },
+        { label: 'Pet', val: 2200, max: 2400 },
+        { label: 'Sub', val: 1350, max: 2400 },
+        { label: 'Ned', val: 1100, max: 2400, today: true },
+      ],
+      offers: [
+        { rev: '7.560 RSD', units: '54 jed.', pct: 88 },
+        { rev: '3.360 RSD', units: '16 jed.', pct: 64 },
+        { rev: '1.680 RSD', units: '8 jed.',  pct: 38 },
+      ],
+      unsettled:   '3.200 RSD',
+      lastAmount:  '8.900 RSD',
+      lastDate:    '12. apr 2026.',
+    },
+    month: {
+      revenue:      '48.600 RSD',
+      revenueTrend: '↓ 3%',
+      revTrendClass:'metric-trend-down',
+      units:        '186 jed.',
+      unitsSub:     'ovog meseca',
+      orders:       '3',
+      rating:       '4.6 ★',
+      ratingSub:    '127 ocena',
+      chartTitle:   'Prihod po nedeljama',
+      chartBars: [
+        { label: '1. ned', val: 10200, max: 16000 },
+        { label: '2. ned', val: 14500, max: 16000 },
+        { label: '3. ned', val: 16000, max: 16000 },
+        { label: '4. ned', val: 7900,  max: 16000, today: true },
+      ],
+      offers: [
+        { rev: '28.140 RSD', units: '201 jed.', pct: 85 },
+        { rev: '13.440 RSD', units: '64 jed.',  pct: 62 },
+        { rev: '7.020 RSD',  units: '33 jed.',  pct: 41 },
+      ],
+      unsettled:   '3.200 RSD',
+      lastAmount:  '8.900 RSD',
+      lastDate:    '12. apr 2026.',
+    },
+  };
+
+  /* ── Render helpers ──────────────────────────────────────────────────── */
+  function renderChart(bars) {
+    const maxVal = Math.max(...bars.map(b => b.val));
+    return bars.map(b => {
+      const pct = Math.round((b.val / maxVal) * 100);
+      const valLabel = b.val >= 1000
+        ? (b.val / 1000).toFixed(1).replace('.', ',') + 'k'
+        : b.val + '';
+      return `
+        <div class="chart-col">
+          <div class="chart-bar-value">${valLabel}</div>
+          <div class="chart-bar-wrap" style="height:80px">
+            <div class="chart-bar${b.today ? ' today' : ''}" style="height:${pct}%"></div>
+          </div>
+          <div class="chart-bar-label">${b.label}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function setPeriod(period, tabEl) {
+    /* Update active tab */
+    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+    tabEl.classList.add('active');
+
+    const d = DATA[period];
+
+    /* Summary metrics */
+    document.getElementById('m-revenue').textContent = d.revenue;
+    const trendEl = document.getElementById('m-revenue-trend');
+    trendEl.textContent = d.revenueTrend;
+    trendEl.className = d.revTrendClass;
+    document.getElementById('m-units').textContent = d.units;
+    document.getElementById('m-units-sub').textContent = d.unitsSub;
+    document.getElementById('m-orders').textContent = d.orders;
+    document.getElementById('m-rating').textContent = d.rating;
+    document.getElementById('m-rating-sub').textContent = d.ratingSub;
+
+    /* Chart */
+    document.getElementById('chart-title').textContent = d.chartTitle;
+    document.getElementById('chart-bars').innerHTML = renderChart(d.chartBars);
+
+    /* Offer rows */
+    d.offers.forEach((o, i) => {
+      const n = i + 1;
+      document.getElementById(`o${n}-rev`).textContent   = o.rev;
+      document.getElementById(`o${n}-units`).textContent = o.units;
+      document.getElementById(`o${n}-bar`).style.width   = o.pct + '%';
+      document.getElementById(`o${n}-pct`).textContent   = `Popunjenost: ${o.pct}%`;
+    });
+
+    /* Balance */
+    document.getElementById('b-unsettled').textContent  = d.unsettled;
+    document.getElementById('b-last-amount').textContent = d.lastAmount;
+    document.getElementById('b-last-date').textContent   = d.lastDate;
+
+    /* Scroll to top */
+    document.getElementById('screen').scrollTop = 0;
+  }
+
+  /* Init with today's data already rendered */
+  document.getElementById('chart-bars').innerHTML = renderChart(DATA.today.chartBars);
+</script>
+</body>
+</html>
