@@ -14,6 +14,9 @@ import {
   PayoutModel,
   VendorDashboardResponse,
   VendorRatingSummary,
+  VendorStatsResponse,
+  ChainStatsResponse,
+  StatsDateRangeParams,
   VendorType,
   Worker,
   WorkerRequest,
@@ -343,7 +346,7 @@ export async function getVendorRatingSummary(
 
 export async function getDashboard(
   vendorId: number | string,
-  period: DashboardPeriod = 'week',
+  period: DashboardPeriod = 'all',
   offerIds?: number[],
 ): Promise<VendorDashboardResponse> {
   const params: { period: DashboardPeriod; offerIds?: number[] } = { period };
@@ -357,5 +360,39 @@ export async function getDashboard(
       paramsSerializer: { indexes: null },
     },
   );
+  return response.data;
+}
+
+export async function getVendorStats(
+  params: StatsDateRangeParams = {},
+): Promise<VendorStatsResponse> {
+  const response = await apiClient.get<VendorStatsResponse>('/vendors/stats', {
+    params,
+    paramsSerializer: {
+      serialize: (p) =>
+        Object.entries(p)
+          .filter(([, v]) => v != null && v !== '')
+          .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+          .join('&'),
+    },
+  });
+  return response.data;
+}
+
+/** Headquarters VENDOR_ADMIN only — branch admins receive 403. Do not pass chainId. */
+export async function getChainStats(
+  params: StatsDateRangeParams = {},
+): Promise<ChainStatsResponse> {
+  const response = await apiClient.get<ChainStatsResponse>('/vendors/chain/stats', {
+    params,
+    // Ensure `+` / `:` in ISO datetimes are percent-encoded (never sent raw).
+    paramsSerializer: {
+      serialize: (p) =>
+        Object.entries(p)
+          .filter(([, v]) => v != null && v !== '')
+          .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+          .join('&'),
+    },
+  });
   return response.data;
 }

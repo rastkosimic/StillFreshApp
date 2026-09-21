@@ -205,11 +205,11 @@ export default function NotificationPreferencesScreen() {
     <View className="flex-1 bg-background">
       {/* Header */}
       <View
-        className="flex-row items-center px-4 pb-3 bg-surface border-b border-border"
+        className="flex-row items-center px-4 pb-3 bg-background border-b border-border"
         style={{ paddingTop: insets.top + 12 }}
       >
         <BackButton onPress={() => navigation.goBack()} />
-        <Text className="flex-1 text-xl font-bold text-text-primary mx-3">
+        <Text className="flex-1 text-xl font-bold text-primary mx-3">
           {t('notifications.preferences')}
         </Text>
       </View>

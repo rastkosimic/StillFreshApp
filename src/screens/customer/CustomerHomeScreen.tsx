@@ -407,7 +407,10 @@ export default function CustomerHomeScreen({ navigation }: Props) {
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 16 }}
+          contentContainerStyle={{
+            paddingBottom: 16,
+            flexGrow: displayOffers.length === 0 ? 1 : undefined,
+          }}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -426,7 +429,7 @@ export default function CustomerHomeScreen({ navigation }: Props) {
 
           {/* Empty state */}
           {!isLoading && displayOffers.length === 0 && (
-            <View className="items-center justify-center px-8 py-16">
+            <View className="flex-1 items-center justify-center px-8">
               <Ionicons name="leaf-outline" size={56} color={colors.primary[200]} />
               <Text className="text-text-primary text-base font-semibold text-center mt-4">
                 {t('customer.noOffersNearby')}

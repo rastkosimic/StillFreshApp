@@ -42,7 +42,7 @@ export default function AllSecureCardRegistrationScreen({ navigation }: Props) {
     try {
       await pollForRegisteredCard();
       Alert.alert(t('common.success'), t('customer.cardRegistered'), [
-        { text: t('common.ok'), onPress: () => navigation.goBack() },
+        { text: t('common.ok'), onPress: () => navigation.navigate('PaymentMethods') },
       ]);
     } catch (err) {
       const msg =
@@ -97,9 +97,9 @@ export default function AllSecureCardRegistrationScreen({ navigation }: Props) {
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      <View className="flex-row items-center px-4 py-3 gap-3 bg-surface border-b border-border">
+      <View className="flex-row items-center px-4 py-3 gap-3 bg-background border-b border-border">
         <BackButton onPress={() => navigation.goBack()} />
-        <Text className="text-lg font-bold text-text-primary flex-1">
+        <Text className="text-lg font-bold text-primary flex-1">
           {t('customer.addCard')}
         </Text>
       </View>
@@ -145,7 +145,7 @@ export default function AllSecureCardRegistrationScreen({ navigation }: Props) {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => navigation.goBack()}
+                onPress={() => navigation.navigate('PaymentMethods')}
                 className="bg-surface border border-border rounded-xl py-4 px-8 mt-3 w-full items-center"
                 activeOpacity={0.8}
               >

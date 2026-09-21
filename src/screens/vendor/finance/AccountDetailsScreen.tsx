@@ -64,19 +64,22 @@ export default function AccountDetailsScreen({ navigation }: Props) {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View style={{
-        backgroundColor: colors.surface,
+        backgroundColor: colors.background,
         paddingTop: 52, paddingHorizontal: 20, paddingBottom: 14,
         flexDirection: 'row', alignItems: 'center', gap: 12,
         borderBottomWidth: 1, borderBottomColor: colors.border,
       }}>
         <BackButton onPress={() => navigation.goBack()} />
-        <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colors.text.primary }}>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colors.primary.DEFAULT }}>
           {t('payment.accountDetails')}
         </Text>
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{
+          paddingBottom: 40,
+          flexGrow: account ? undefined : 1,
+        }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary.DEFAULT} />
@@ -139,7 +142,7 @@ export default function AccountDetailsScreen({ navigation }: Props) {
               ))}
           </View>
         ) : (
-          <View style={{ alignItems: 'center', paddingTop: 60, gap: 8 }}>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             <Feather name="user-x" size={40} color={colors.border} />
             <Text style={{ fontSize: 15, color: colors.text.secondary }}>{t('errors.notFound')}</Text>
           </View>

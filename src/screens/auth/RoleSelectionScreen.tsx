@@ -24,7 +24,7 @@ export default function RoleSelectionScreen({ navigation }: Props) {
 
       {/* Header */}
       <View className="mb-10 items-center">
-        <BrandLogo variant="stacked" width={64} className="mb-3" />
+        <BrandLogo variant="stacked" width={96} className="mb-3" />
         <Text className="text-text-primary text-xl font-bold mt-3 text-center">
           {t('auth.roleSelection')}
         </Text>

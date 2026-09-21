@@ -14,6 +14,7 @@ interface FavoritesState {
 interface FavoritesActions {
   loadFavorites: (force?: boolean) => Promise<void>;
   toggleFavorite: (offer: Offer) => Promise<void>;
+  removeExpiredFavorites: () => Promise<void>;
   reset: () => void;
 }
 
@@ -50,14 +51,19 @@ export const useFavoritesStore = create<FavoritesState & FavoritesActions>((set,
   },
 
   toggleFavorite: async (offer: Offer) => {
-    const { favoriteIds, favorites } = get();
+    const { favoriteIds, favorites, expiredCount, soldOutCount } = get();
     const wasFavorite = favoriteIds.has(offer.id);
 
     // Optimistic update
     const nextIds = new Set(favoriteIds);
     if (wasFavorite) {
       nextIds.delete(offer.id);
-      set({ favoriteIds: nextIds, favorites: favorites.filter(o => o.id !== offer.id) });
+      set({
+        favoriteIds: nextIds,
+        favorites: favorites.filter(o => o.id !== offer.id),
+        expiredCount: offer.expired ? Math.max(0, expiredCount - 1) : expiredCount,
+        soldOutCount: offer.soldOut ? Math.max(0, soldOutCount - 1) : soldOutCount,
+      });
     } else {
       nextIds.add(offer.id);
       set({ favoriteIds: nextIds, favorites: [offer, ...favorites] });
@@ -68,7 +74,28 @@ export const useFavoritesStore = create<FavoritesState & FavoritesActions>((set,
       if (wasFavorite) await removeFavorite(offer.id);
       else await addFavorite(offer.id);
     } catch {
-      set({ favoriteIds, favorites });
+      set({ favoriteIds, favorites, expiredCount, soldOutCount });
+    }
+  },
+
+  removeExpiredFavorites: async () => {
+    const { favorites, favoriteIds, expiredCount, soldOutCount } = get();
+    const stale = favorites.filter((offer) => offer.greyedOut || offer.expired || offer.soldOut);
+    if (stale.length === 0) return;
+
+    const staleIds = new Set(stale.map((offer) => offer.id));
+    const remaining = favorites.filter((offer) => !staleIds.has(offer.id));
+    set({
+      favorites: remaining,
+      favoriteIds: new Set(remaining.map((offer) => offer.id)),
+      expiredCount: 0,
+      soldOutCount: 0,
+    });
+
+    try {
+      await Promise.all(stale.map((offer) => removeFavorite(offer.id)));
+    } catch {
+      set({ favorites, favoriteIds, expiredCount, soldOutCount });
     }
   },
 

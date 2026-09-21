@@ -20,6 +20,7 @@ import { VendorTabScreenProps } from '@/navigation/types';
 import { deleteVendorAccount, getVendorProfile, VendorProfile } from '@/services/vendorService';
 import { useAuthStore } from '@/stores/authStore';
 import { colors } from '@/theme/colors';
+import { fonts } from '@/theme/typography';
 import { decodeJWTPayload } from '@/utils/jwtDecoder';
 
 type Props = VendorTabScreenProps<'VendorProfile'>;
@@ -126,10 +127,11 @@ export default function VendorProfileScreen({ navigation }: Props) {
     >
       {/* Page title */}
       <View style={{ paddingHorizontal: 24, paddingTop: insets.top + 12, paddingBottom: 8, flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={{ flex: 1, fontSize: 28, fontWeight: '700', color: colors.text.primary }}>
+        <View style={{ width: 36 }} />
+        <Text style={{ flex: 1, fontSize: 28, fontFamily: fonts.ui.bold, color: colors.primary.DEFAULT, textAlign: 'center' }}>
           {t('navigation.profile')}
         </Text>
-        {user?.role === 'VENDOR_ADMIN' && (
+        {user?.role === 'VENDOR_ADMIN' ? (
           <TouchableOpacity
             onPress={() => navigation.navigate('VendorEditProfile')}
             activeOpacity={0.7}
@@ -142,6 +144,8 @@ export default function VendorProfileScreen({ navigation }: Props) {
           >
             <Feather name="edit-2" size={16} color={colors.primary.DEFAULT} />
           </TouchableOpacity>
+        ) : (
+          <View style={{ width: 36 }} />
         )}
       </View>
 
@@ -291,13 +295,10 @@ export default function VendorProfileScreen({ navigation }: Props) {
       <View style={{ paddingHorizontal: 24, marginTop: 32 }}>
         <TouchableOpacity
           onPress={onLogout}
+          className="bg-error rounded-xl py-4 items-center"
           activeOpacity={0.8}
-          style={{
-            borderRadius: 14, paddingVertical: 15,
-            alignItems: 'center', borderWidth: 1, borderColor: colors.error,
-          }}
         >
-          <Text style={{ color: colors.error, fontWeight: '600', fontSize: 16 }}>
+          <Text className="text-white font-semibold text-base">
             {t('auth.logout')}
           </Text>
         </TouchableOpacity>

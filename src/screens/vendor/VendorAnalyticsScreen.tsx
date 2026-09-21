@@ -13,12 +13,20 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import AnalyticsLocationFilterModal from '@/components/AnalyticsLocationFilterModal';
 import AnalyticsOfferFilterModal from '@/components/AnalyticsOfferFilterModal';
+import { useVendorIdentity } from '@/hooks/useVendorIdentity';
 import { VendorTabScreenProps } from '@/navigation/types';
-import { getAllOffers, getDashboard, getVendorRatingSummary } from '@/services/vendorService';
+import {
+  getAllOffers,
+  getChainLocations,
+  getDashboard,
+  getVendorRatingSummary,
+} from '@/services/vendorService';
 import { useAuthStore } from '@/stores/authStore';
 import { colors } from '@/theme/colors';
 import {
+  ChainLocation,
   CompletedOrderSummary,
   DashboardActiveOrder,
   DashboardPeriod,
@@ -40,7 +48,7 @@ import {
   sellThroughPercent,
 } from '@/utils/dashboardFormat';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { formatPickupDeadline } from '@/utils/formatDate';
+import { formatInstant, formatPickupDeadline } from '@/utils/formatDate';
 import { formatOrderAmount } from '@/utils/formatOrderAmount';
 import { orderStatusColor, orderStatusI18nKey } from '@/utils/orderStatus';
 
@@ -48,7 +56,7 @@ type Props = VendorTabScreenProps<'Analytics'>;
 
 const CHART_BAR_AREA = 88;
 const OFFERS_PREVIEW = 3;
-const PERIODS: DashboardPeriod[] = ['today', 'week', 'month', 'all'];
+const PERIODS: DashboardPeriod[] = ['all', 'today', 'week', 'month'];
 
 const cardShadow: ViewStyle = {
   shadowColor: colors.text.primary,
@@ -150,13 +158,23 @@ function benchmarkStrSub(
   });
 }
 
-export default function VendorAnalyticsScreen(_props: Props) {
+export default function VendorAnalyticsScreen({ navigation }: Props) {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
+  const { identity, isLoading: identityLoading } = useVendorIdentity();
 
-  const [period, setPeriod] = useState<DashboardPeriod>('week');
+  const canChooseLocation =
+    !identityLoading &&
+    identity.isChainLocation &&
+    identity.isHeadquarters &&
+    identity.isAdmin;
+
+  const [period, setPeriod] = useState<DashboardPeriod>('all');
   const [dashboard, setDashboard] = useState<VendorDashboardResponse | null>(null);
+  const [chainLocations, setChainLocations] = useState<ChainLocation[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [ratingSummary, setRatingSummary] = useState<VendorRatingSummary | null>(null);
   const [vendorOffers, setVendorOffers] = useState<Offer[]>([]);
   const [appliedOfferIds, setAppliedOfferIds] = useState<number[]>([]);
@@ -166,26 +184,85 @@ export default function VendorAnalyticsScreen(_props: Props) {
   const [showAllOffers, setShowAllOffers] = useState(false);
 
   const vendorId = user?.vendor?.id ?? null;
+  const statsVendorId = selectedLocationId ?? vendorId;
+
+  const selectedLocation = useMemo(
+    () => chainLocations.find((loc) => loc.id === selectedLocationId) ?? null,
+    [chainLocations, selectedLocationId],
+  );
+
+  const loadChainLocations = useCallback(async () => {
+    if (!canChooseLocation || vendorId == null) {
+      setChainLocations([]);
+      setSelectedLocationId(vendorId);
+      return;
+    }
+    try {
+      const rows = await getChainLocations();
+      setChainLocations(rows);
+      setSelectedLocationId((current) => {
+        if (current != null && rows.some((r) => r.id === current)) return current;
+        return rows.find((r) => r.isHeadquarters)?.id ?? vendorId;
+      });
+    } catch {
+      setChainLocations([]);
+      setSelectedLocationId(vendorId);
+    }
+  }, [canChooseLocation, vendorId]);
 
   useEffect(() => {
-    if (!vendorId) return;
-    getAllOffers()
-      .then(setVendorOffers)
-      .catch(() => setVendorOffers([]));
-  }, [vendorId]);
+    if (identityLoading) return;
+    void loadChainLocations();
+  }, [identityLoading, loadChainLocations]);
+
+  useEffect(() => {
+    if (!statsVendorId) return;
+    if (statsVendorId === vendorId) {
+      getAllOffers()
+        .then(setVendorOffers)
+        .catch(() => setVendorOffers([]));
+    }
+  }, [statsVendorId, vendorId]);
+
+  useEffect(() => {
+    if (statsVendorId == null || statsVendorId === vendorId) return;
+    const rows = dashboard?.offerPerformance ?? [];
+    setVendorOffers(
+      rows.map(
+        (offer): Offer => ({
+          id: offer.offerId,
+          vendorId: statsVendorId,
+          name: offer.offerName ?? '—',
+          price: 0,
+          currency: 'RSD',
+          quantityAvailable: 0,
+          address: '',
+          active: offer.active,
+        }),
+      ),
+    );
+  }, [dashboard?.offerPerformance, statsVendorId, vendorId]);
+
+  const onSelectLocation = useCallback((locationId: number) => {
+    setSelectedLocationId(locationId);
+    setAppliedOfferIds([]);
+    setShowAllOffers(false);
+  }, []);
 
   const loadData = useCallback(
     async (silent = false) => {
-      if (!vendorId) return;
+      if (!statsVendorId) return;
+      if (identityLoading) return;
       if (!silent) setIsLoading(true);
       const offerIds = appliedOfferIds.length > 0 ? appliedOfferIds : undefined;
       const [dashResult, ratingResult] = await Promise.allSettled([
-        getDashboard(vendorId, period, offerIds),
-        getVendorRatingSummary(vendorId),
+        getDashboard(statsVendorId, period, offerIds),
+        getVendorRatingSummary(statsVendorId),
       ]);
       if (dashResult.status === 'fulfilled') {
         setDashboard(dashResult.value);
       } else {
+        setDashboard(null);
         const err = dashResult.reason as ApiError;
         if (err.status === 400) {
           setAppliedOfferIds([]);
@@ -197,7 +274,7 @@ export default function VendorAnalyticsScreen(_props: Props) {
       }
       if (!silent) setIsLoading(false);
     },
-    [vendorId, period, appliedOfferIds, t],
+    [statsVendorId, period, appliedOfferIds, identityLoading, t],
   );
 
   useEffect(() => {
@@ -207,9 +284,9 @@ export default function VendorAnalyticsScreen(_props: Props) {
 
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await loadData(true);
+    await Promise.all([loadChainLocations(), loadData(true)]);
     setIsRefreshing(false);
-  }, [loadData]);
+  }, [loadChainLocations, loadData]);
 
   const currency = useMemo(() => resolveCurrency(dashboard), [dashboard]);
 
@@ -268,10 +345,10 @@ export default function VendorAnalyticsScreen(_props: Props) {
       }
     >
       <View
-        className="bg-surface border-b border-border px-5 pb-3.5"
+        className="bg-background px-5 pb-3.5"
         style={{ paddingTop: insets.top + 12 }}
       >
-        <Text className="text-[28px] font-bold text-text-primary mb-3.5">
+        <Text className="text-[28px] font-bold text-primary mb-3.5 text-center">
           {t('analytics.title')}
         </Text>
         <View className="flex-row bg-border rounded-[10px] p-0.5">
@@ -312,6 +389,19 @@ export default function VendorAnalyticsScreen(_props: Props) {
           </Text>
           <Feather name="chevron-down" size={16} color={colors.primary.DEFAULT} />
         </TouchableOpacity>
+        {canChooseLocation && chainLocations.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setLocationModalVisible(true)}
+            activeOpacity={0.7}
+            className="flex-row items-center gap-2 mt-2 py-2 px-3 rounded-xl bg-surface border border-border"
+          >
+            <Feather name="map-pin" size={16} color={colors.text.secondary} />
+            <Text className="text-sm font-semibold text-text-primary flex-1" numberOfLines={1}>
+              {selectedLocation?.locationName ?? t('analytics.locationFilterLabel')}
+            </Text>
+            <Feather name="chevron-down" size={16} color={colors.text.secondary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <AnalyticsOfferFilterModal
@@ -321,6 +411,27 @@ export default function VendorAnalyticsScreen(_props: Props) {
         onClose={() => setFilterModalVisible(false)}
         onApply={setAppliedOfferIds}
       />
+
+      <AnalyticsLocationFilterModal
+        visible={locationModalVisible}
+        locations={chainLocations}
+        selectedLocationId={selectedLocationId}
+        onClose={() => setLocationModalVisible(false)}
+        onSelect={onSelectLocation}
+      />
+
+      {canChooseLocation && selectedLocation != null && (
+        <View
+          className="mx-4 mt-3 px-3.5 py-2.5 rounded-xl border border-primary-100"
+          style={{ backgroundColor: `${colors.primary.DEFAULT}10` }}
+        >
+          <Text className="text-sm font-semibold text-primary">
+            {selectedLocation.isHeadquarters
+              ? t('analytics.statsScopeHeadquarters', { name: selectedLocation.locationName })
+              : t('analytics.statsScopeLocation', { name: selectedLocation.locationName })}
+          </Text>
+        </View>
+      )}
 
       <SectionLabel label={t('analytics.sectionOverview')} />
       {summary == null ? (
@@ -548,6 +659,11 @@ export default function VendorAnalyticsScreen(_props: Props) {
                 isLast={idx === activeOrders.length - 1}
                 t={t}
                 locale={i18n.language}
+                onPress={
+                  order.orderId != null
+                    ? () => navigation.navigate('VendorOrderDetail', { orderId: order.orderId as number })
+                    : undefined
+                }
               />
             ))
           )}
@@ -649,7 +765,7 @@ export default function VendorAnalyticsScreen(_props: Props) {
                   )}
                 </Text>
                 <Text className="text-[11px] text-text-secondary mt-0.5">
-                  {formatPickupDeadline(payoutBalance.lastPayoutAt, i18n.language)}
+                  {formatInstant(payoutBalance.lastPayoutAt, i18n.language)}
                 </Text>
               </View>
             </View>
@@ -818,19 +934,24 @@ function ActiveOrderRow({
   isLast,
   t,
   locale,
+  onPress,
 }: {
   order: DashboardActiveOrder;
   isLast: boolean;
   t: (key: string, opts?: Record<string, unknown>) => string;
   locale: string;
+  onPress?: () => void;
 }) {
   const status = (order.status ?? 'CONFIRMED') as OrderStatus;
   const orderCurrency = order.currency ?? 'RSD';
 
   return (
-    <View
+    <TouchableOpacity
       className="px-3.5 py-3"
       style={{ borderBottomWidth: isLast ? 0 : 1, borderBottomColor: colors.border }}
+      onPress={onPress}
+      disabled={onPress == null}
+      activeOpacity={onPress != null ? 0.7 : 1}
     >
       <View className="flex-row items-center justify-between mb-1">
         <Text className="text-sm font-semibold text-text-primary">
@@ -838,9 +959,14 @@ function ActiveOrderRow({
             ? t('analytics.orderNumber', { id: order.orderId })
             : t('analytics.orderNumber', { id: '—' })}
         </Text>
-        <Text className="text-[15px] font-bold text-text-primary">
-          {formatOrderAmount(order.totalPrice, orderCurrency)}
-        </Text>
+        <View className="flex-row items-center gap-1">
+          <Text className="text-[15px] font-bold text-text-primary">
+            {formatOrderAmount(order.totalPrice, orderCurrency)}
+          </Text>
+          {onPress != null && (
+            <Feather name="chevron-right" size={16} color={colors.text.secondary} />
+          )}
+        </View>
       </View>
       <View className="flex-row items-center justify-between">
         <Text className="text-xs font-semibold" style={{ color: orderStatusColor(status) }}>
@@ -851,7 +977,7 @@ function ActiveOrderRow({
           {order.pickupBy != null ? ` · ${formatPickupDeadline(order.pickupBy, locale)}` : ''}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -906,7 +1032,7 @@ function CompletedOrderRow({
         </Text>
         {order.settledAt != null && (
           <Text className="text-[11px] text-text-secondary">
-            {formatPickupDeadline(order.settledAt, locale)}
+            {formatInstant(order.settledAt, locale)}
           </Text>
         )}
       </View>
@@ -914,12 +1040,12 @@ function CompletedOrderRow({
   );
 }
 
-function UnavailableCard() {
+function UnavailableCard({ message }: { message?: string | null }) {
   const { t } = useTranslation();
   return (
     <View style={cardStyle}>
       <Text className="text-sm text-text-secondary text-center py-4">
-        {t('analytics.sectionUnavailable')}
+        {message != null && message.length > 0 ? message : t('analytics.sectionUnavailable')}
       </Text>
     </View>
   );

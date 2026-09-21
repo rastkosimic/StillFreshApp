@@ -132,7 +132,7 @@ export default function CustomerSettingsScreen({ navigation }: Props) {
           style={{ paddingTop: insets.top + 12 }}
         >
           <BackButton onPress={() => navigation.goBack()} className="mr-3" />
-          <Text className="text-2xl font-bold text-text-primary flex-1">
+          <Text className="text-2xl font-bold text-primary flex-1">
             {t('customer.profile.settings')}
           </Text>
         </View>

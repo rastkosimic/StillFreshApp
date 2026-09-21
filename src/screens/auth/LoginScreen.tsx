@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -23,6 +24,7 @@ import {
 import { z } from 'zod';
 
 import BrandLogo from '@/components/BrandLogo';
+import { brandAssets } from '@/config/brandAssets';
 import { GOOGLE_WEB_CLIENT_ID } from '@/config/google';
 import { AuthStackScreenProps } from '@/navigation/types';
 import { googleLogin, login } from '@/services/authService';
@@ -293,7 +295,7 @@ export default function LoginScreen({ navigation }: Props) {
           {/* Razdelnik */}
           <View className="flex-row items-center mb-4">
             <View className="flex-1 h-px bg-border" />
-            <Text className="text-text-secondary text-sm mx-3">or</Text>
+            <Text className="text-text-secondary text-sm mx-3">{t('auth.or')}</Text>
             <View className="flex-1 h-px bg-border" />
           </View>
 
@@ -308,7 +310,12 @@ export default function LoginScreen({ navigation }: Props) {
               <ActivityIndicator color={colors.text.primary} />
             ) : (
               <>
-                <Text className="text-lg mr-2">G</Text>
+                <Image
+                  source={brandAssets.googleG}
+                  className="w-5 h-5 mr-2"
+                  resizeMode="contain"
+                  accessibilityIgnoresInvertColors
+                />
                 <Text className="text-text-primary font-semibold text-base">
                   {t('auth.googleSignIn')}
                 </Text>

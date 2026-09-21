@@ -13,7 +13,7 @@ export default function VendorApplicationSubmittedScreen({ navigation }: Props) 
   return (
     <View className="flex-1 bg-background px-6 py-12 items-center justify-center">
 
-      <BrandLogo variant="icon" width={80} height={80} className="mb-6" />
+      <BrandLogo variant="icon" width={120} height={120} className="mb-6" />
 
       {/* Title */}
       <Text className="text-2xl font-bold text-text-primary text-center mb-3">

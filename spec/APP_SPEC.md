@@ -592,7 +592,7 @@ COMPLETED             →  Exit onboarding → VendorProfileCompletionScreen
 
 | Action | Method | Endpoint | Request Body | Response Shape |
 |--------|--------|----------|--------------|----------------|
-| Search nearby | GET | `/customers/search-nearby` | `?latitude=&longitude=&range=&sort=` | `{ offers: Offer[] }` |
+| Search nearby | GET | `` | `?latitude=&longitude=&range=&sort=` | `{ offers: Offer[] }` |
 | Get payment methods | GET | `/customers/payment-methods` | — | `CustomerPaymentMethod[]` |
 | Place order | POST | `/orders` | `{ offerId: string, quantity: number }` | `{ order: Order, paymentIntentId: string, message: string }` |
 

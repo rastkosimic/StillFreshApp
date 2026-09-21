@@ -96,26 +96,29 @@ export default function RequirementsScreen({ navigation }: Props) {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View style={{
-        backgroundColor: colors.surface,
+        backgroundColor: colors.background,
         paddingTop: 52, paddingHorizontal: 20, paddingBottom: 14,
         flexDirection: 'row', alignItems: 'center', gap: 12,
         borderBottomWidth: 1, borderBottomColor: colors.border,
       }}>
         <BackButton onPress={() => navigation.goBack()} />
-        <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colors.text.primary }}>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colors.primary.DEFAULT }}>
           {t('payment.requirements')}
         </Text>
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{
+          paddingBottom: 40,
+          flexGrow: allEmpty ? 1 : undefined,
+        }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary.DEFAULT} />
         }
       >
         {allEmpty ? (
-          <View style={{ alignItems: 'center', paddingTop: 60, gap: 12 }}>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
             <View style={{
               width: 56, height: 56, borderRadius: 28,
               backgroundColor: colors.primary[50] ?? '#E8F5E9',

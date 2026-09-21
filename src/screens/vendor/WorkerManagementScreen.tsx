@@ -292,7 +292,10 @@ export default function WorkerManagementScreen({ navigation, route }: Props) {
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 32,
+            flexGrow: workers.length === 0 ? 1 : undefined,
+          }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -364,7 +367,7 @@ export default function WorkerManagementScreen({ navigation, route }: Props) {
           )}
 
           {workers.length === 0 ? (
-            <View className="items-center px-10 py-12">
+            <View className="flex-1 items-center justify-center px-10">
               <Feather name="users" size={48} color={colors.primary[200]} />
               <Text className="text-base font-semibold text-text-primary text-center mt-4">
                 {t('vendor.workers.emptyTitle')}
@@ -507,12 +510,12 @@ function Header({
 }) {
   return (
     <View
-      className="bg-surface border-b border-border px-5 pb-3.5 flex-row items-center gap-3"
+      className="bg-background border-b border-border px-5 pb-3.5 flex-row items-center gap-3"
       style={{ paddingTop: insets.top + 12 }}
     >
       <BackButton onPress={onBack} />
       <View className="flex-1">
-        <Text className="text-[17px] font-semibold text-text-primary">{title}</Text>
+        <Text className="text-[17px] font-semibold text-primary">{title}</Text>
         {subtitle ? (
           <Text className="text-xs text-text-secondary mt-0.5">{subtitle}</Text>
         ) : null}

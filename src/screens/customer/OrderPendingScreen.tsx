@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
+  Alert,
   Text,
   TouchableOpacity,
   View,
@@ -16,6 +17,7 @@ import {
 import { CustomerStackScreenProps } from '@/navigation/types';
 import { getOrders, placeOrder } from '@/services/orderService';
 import { useOffersRefreshStore } from '@/stores/offersRefreshStore';
+import { useBasketStore } from '@/stores/basketStore';
 import { colors } from '@/theme/colors';
 import { generateRequestId } from '@/utils/generateRequestId';
 import {
@@ -54,6 +56,13 @@ export default function OrderPendingScreen({ route, navigation }: Props) {
   const startedRef = useRef(false);
   const flowGenerationRef = useRef(0);
   const flowAbortRef = useRef(false);
+
+  const navigateHome = useCallback(() => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'CustomerTabs', params: { screen: 'CustomerHome' } }],
+    });
+  }, [navigation]);
 
   const runFlow = useCallback(async () => {
     const generation = ++flowGenerationRef.current;
@@ -97,12 +106,17 @@ export default function OrderPendingScreen({ route, navigation }: Props) {
       setAuthRedirectUrl(null);
       setPhase('confirming');
 
-      const order = await pollForNewOrder(offerId, knownIdsRef.current);
+      await pollForNewOrder(offerId, knownIdsRef.current);
 
       if (isStale()) return;
 
       useOffersRefreshStore.getState().recordReservation(offerId, quantity);
-      navigation.replace('OrderDetail', { orderId: order.id });
+      void useBasketStore.getState().fetchActiveCount();
+      Alert.alert(
+        t('customer.reservationPlacedTitle'),
+        t('customer.reservationPlacedMessage'),
+        [{ text: t('common.ok'), onPress: navigateHome }],
+      );
     } catch (err) {
       if (err instanceof PaymentAbortedError || isStale()) {
         return;
@@ -127,7 +141,7 @@ export default function OrderPendingScreen({ route, navigation }: Props) {
       setErrorMessage(t('errors.orderFailed'));
       setPhase('error');
     }
-  }, [offerId, quantity, navigation, t]);
+  }, [offerId, quantity, navigateHome, t]);
 
   const handleAuthReturn = useCallback(
     (status: AllSecureReturnStatus) => {

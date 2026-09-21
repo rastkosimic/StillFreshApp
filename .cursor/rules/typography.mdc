@@ -1,0 +1,23 @@
+---
+description: StillFresh typography — Bricolage wordmark only, Figtree for all other UI
+globs: src/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Typography
+
+Two families. Do not add a third. Device system font is OS chrome only.
+
+- **Još Sveže wordmark** (stacked `BrandLogo` only): `font-display` (Bricolage Grotesque 700).
+- **Everything else** (screen titles, cards, tabs, buttons, body): Figtree via `font-normal` / `font-medium` / `font-semibold` / `font-bold` / `font-extrabold`.
+- Tokens: `src/theme/typography.ts` (`fonts.display`, `fonts.ui.*`). Use these in inline styles — never `'System'` or a raw Bricolage name on titles.
+
+```tsx
+// Wordmark
+<Text className="text-primary text-3xl font-display">{t('auth.appName')}</Text>
+
+// Screen title (Omiljeni, Korpa, Dashboard)
+<Text className="text-2xl font-bold text-primary">{t('navigation.favorites')}</Text>
+```
+
+Do not put `font-display` / Bricolage on buttons, tab labels, offer cards, or prices.

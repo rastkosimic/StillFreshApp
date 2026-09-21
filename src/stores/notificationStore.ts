@@ -84,11 +84,7 @@ export const useNotificationStore = create<NotificationState & NotificationActio
 
   registerFCMToken: async (token) => {
     set({ fcmToken: token });
-    try {
-      await serviceRegisterFCMToken(token);
-    } catch {
-      // Non-fatal: app still works without push notifications
-    }
+    await serviceRegisterFCMToken(token);
   },
 
   fetchNotifications: async () => {

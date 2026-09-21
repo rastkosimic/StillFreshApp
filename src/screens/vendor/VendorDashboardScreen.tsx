@@ -63,7 +63,7 @@ export default function VendorDashboardScreen({ navigation }: Props) {
           setProfileImageUrl(p.imageUrl ?? null);
         })
         .catch(() => null),
-      getDashboard(vendorId, 'week')
+      getDashboard(vendorId, 'all')
         .then(setDashboard)
         .catch(() => null),
     ]);
@@ -121,14 +121,12 @@ export default function VendorDashboardScreen({ navigation }: Props) {
       }
     >
       <View
-        className="bg-surface border-b border-border px-5 pb-3.5"
+        className="bg-background px-5 pb-3.5"
         style={{ paddingTop: insets.top + 12 }}
       >
-        <Text className="text-[11px] text-text-secondary font-medium mb-1">
-          {todayStr}
-        </Text>
-        <View className="flex-row items-end justify-between">
-          <Text className="text-[28px] font-bold text-text-primary leading-8">
+        <View className="flex-row items-center">
+          <View className="w-14" />
+          <Text className="flex-1 text-[28px] font-bold text-primary leading-8 text-center">
             {t('vendor.dashboard.title')}
           </Text>
           <TouchableOpacity
@@ -154,6 +152,9 @@ export default function VendorDashboardScreen({ navigation }: Props) {
             </View>
           </TouchableOpacity>
         </View>
+        <Text className="text-[11px] text-text-secondary font-medium mt-1 text-center">
+          {todayStr}
+        </Text>
         {locationName ? (
           <Text className="text-xs text-text-secondary mt-0.5">
             {locationName}

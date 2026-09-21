@@ -141,18 +141,40 @@ Source of truth: `tailwind.config.js` ↔ `src/theme/colors.ts`.
 
 ## Typography
 
-- **Font**: system default (`fontFamily.sans: System`)
-- **Scale** (Tailwind classes): `text-xs`(12) · `text-sm`(14) · `text-base`(16) · `text-lg`(18) · `text-xl`(20) · `text-2xl`(24) · `text-3xl`(30) · `text-4xl`(36)
-- **Weights**: body `font-normal` · labels `font-medium`/`font-semibold` · titles `font-bold`/`font-extrabold`
-- **Hierarchy patterns**:
-  - Brand wordmark: `text-3xl`/`text-4xl font-bold text-primary`
-  - Screen title (vendor): 28px bold (`text-[28px]` or inline style from theme)
-  - Section title: `text-base font-bold text-text-primary`
-  - Card vendor line: `text-xs text-text-secondary`
-  - Card title: `text-sm font-bold`
-  - Meta / pickup window: `text-xs text-text-secondary`
-  - Discount price: `text-base font-extrabold text-primary`
-  - Strikethrough original: `text-xs text-text-secondary line-through`
+Two custom families. Do not add a third. OS chrome (status bar, system dialogs) stays the device font.
+
+| Role | Font | Where |
+|------|------|--------|
+| **Display** | Bricolage Grotesque 700 | **Još Sveže wordmark only** (`font-display` on stacked `BrandLogo`) |
+| **UI** | Figtree 400 / 500 / 600 / 700 / 800 | All other app text |
+
+Screen titles (Omiljeni, Korpa, Dashboard) use **Figtree bold**, not Bricolage. Bricolage on titles dilutes the wordmark.
+
+### Classes (NativeWind)
+
+- Default / body: no extra class (Figtree 400 via default Text style) or `font-normal`
+- Labels: `font-medium` or `font-semibold`
+- Titles, card names, buttons: `font-bold` (Figtree 700)
+- Sale prices: `font-extrabold` (Figtree 800)
+- Wordmark: `font-display` — never on buttons, tabs, cards, or prices
+
+Tokens live in `src/theme/typography.ts` (`fonts.display`, `fonts.ui.*`). Inline styles must use those names, not `'System'`.
+
+### Scale
+
+`text-xs`(12) · `text-sm`(14) · `text-base`(16) · `text-lg`(18) · `text-xl`(20) · `text-2xl`(24) · `text-3xl`(30) · `text-4xl`(36)
+
+### Hierarchy patterns
+
+- Brand wordmark: `text-3xl font-display text-primary tracking-tight`
+- Screen title (customer): `text-2xl font-bold text-primary`
+- Screen title (vendor): `text-[28px] font-bold text-primary` (or inline `fonts.ui.bold` at 28)
+- Section title: `text-base font-bold text-text-primary`
+- Card vendor line: `text-xs font-semibold text-primary`
+- Card title: `text-sm font-bold` / list `text-base font-bold`
+- Meta / pickup: `text-xs font-normal text-text-secondary`
+- Discount price: `text-base font-extrabold text-primary`
+- Strikethrough original: `text-xs text-text-secondary line-through`
 
 ## Spacing & radius
 
@@ -369,6 +391,7 @@ Always use `getQuantityLeftBadgeStyle(offer.quantityAvailable)` — never inline
 
 Before finishing a screen, verify:
 
+- [ ] Screen titles use Figtree (`font-bold`); `font-display` only on the Još Sveže wordmark
 - [ ] `bg-background` screen root with safe-area insets
 - [ ] All colors from tokens (no stray hex in JSX)
 - [ ] All strings from i18n

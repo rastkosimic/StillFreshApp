@@ -242,12 +242,12 @@ export default function BankingModelManagementScreen({ navigation }: Props) {
   return (
     <View className="flex-1 bg-background">
       <View
-        className="bg-surface border-b border-border px-5 pb-3.5 flex-row items-center gap-3"
+        className="bg-background border-b border-border px-5 pb-3.5 flex-row items-center gap-3"
         style={{ paddingTop: insets.top + 12 }}
       >
         <BackButton onPress={() => navigation.goBack()} />
         <View className="flex-1">
-          <Text className="text-[17px] font-semibold text-text-primary">
+          <Text className="text-[17px] font-semibold text-primary">
             {t('vendor.bankingModelScreen.title')}
           </Text>
           {info?.chainName ? (

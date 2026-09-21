@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import BackButton from '@/components/BackButton';
 import {
@@ -44,6 +45,7 @@ const SUPPORTED_COUNTRIES = getSupportedCountries();
 
 export default function VendorEditProfileScreen({ navigation }: Props) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const logout = useAuthStore((s) => s.logout);
@@ -295,13 +297,13 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
     >
       {/* ── Nav header ─────────────────────────────────────────────────────── */}
       <View style={{
-        backgroundColor: colors.surface,
-        paddingTop: 52, paddingHorizontal: 20, paddingBottom: 14,
+        backgroundColor: colors.background,
+        paddingTop: insets.top + 12, paddingHorizontal: 20, paddingBottom: 14,
         flexDirection: 'row', alignItems: 'center', gap: 10,
         borderBottomWidth: 1, borderBottomColor: colors.border,
       }}>
         <BackButton onPress={() => navigation.goBack()} />
-        <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colors.text.primary }}>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colors.primary.DEFAULT }}>
           {t('vendor.profile.editTitle')}
         </Text>
         <TouchableOpacity

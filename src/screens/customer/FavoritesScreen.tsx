@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
-  ScrollView,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,17 +23,25 @@ type Props = CustomerTabScreenProps<'Favorites'>;
 export default function FavoritesScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { favorites, expiredCount, soldOutCount, isLoading, initialized, loadFavorites, toggleFavorite } =
-    useFavoritesStore();
+  const {
+    favorites,
+    expiredCount,
+    soldOutCount,
+    isLoading,
+    initialized,
+    loadFavorites,
+    toggleFavorite,
+    removeExpiredFavorites,
+  } = useFavoritesStore();
   const revision = useOffersRefreshStore((state) => state.revision);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRemovingExpired, setIsRemovingExpired] = useState(false);
 
   useEffect(() => {
     if (revision === 0) return;
     void loadFavorites(true);
   }, [revision, loadFavorites]);
 
-  // Reload on every tab focus so greyedOut state stays current
   useFocusEffect(
     useCallback(() => {
       void loadFavorites(true);
@@ -46,39 +54,29 @@ export default function FavoritesScreen({ navigation }: Props) {
     setIsRefreshing(false);
   }, [loadFavorites]);
 
-  // Group offers into rows of 2 for the centered layout
-  const rows = useMemo(() => {
-    const result: Offer[][] = [];
-    for (let i = 0; i < favorites.length; i += 2) {
-      result.push(favorites.slice(i, i + 2));
-    }
-    return result;
-  }, [favorites]);
-
   const missedCount = expiredCount + soldOutCount;
 
-  const renderRow = useCallback(
-    ({ item: row }: { item: Offer[] }) => (
-      // flexGrow: 1 + justifyContent: 'center' → equal margins when cards fit,
-      // horizontal scroll kicks in automatically when they don't
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', gap: 12 }}
-      >
-        {row.map(offer => (
-          <OfferCard
-            key={offer.id}
-            offer={offer}
-            greyed={offer.greyedOut}
-            onPress={offer.greyedOut ? undefined : () => navigation.navigate('OfferDetails', { offerId: offer.id })}
-            onFavoriteToggle={toggleFavorite}
-            isFavorite={true}
-          />
-        ))}
-      </ScrollView>
+  const onRemoveExpired = useCallback(async () => {
+    if (isRemovingExpired) return;
+    setIsRemovingExpired(true);
+    await removeExpiredFavorites();
+    setIsRemovingExpired(false);
+  }, [isRemovingExpired, removeExpiredFavorites]);
+
+  const renderItem = useCallback(
+    ({ item }: { item: Offer }) => (
+      <View className="px-4">
+        <OfferCard
+          offer={item}
+          variant="list"
+          greyed={item.greyedOut}
+          onPress={item.greyedOut ? undefined : () => navigation.navigate('OfferDetails', { offerId: item.id })}
+          onFavoriteToggle={toggleFavorite}
+          isFavorite={true}
+        />
+      </View>
     ),
-    [toggleFavorite],
+    [navigation, toggleFavorite],
   );
 
   if (isLoading && !initialized) {
@@ -92,7 +90,7 @@ export default function FavoritesScreen({ navigation }: Props) {
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <View className="px-4 pt-2 pb-3">
-        <Text className="text-text-primary text-2xl font-bold">
+        <Text className="text-primary text-2xl font-bold text-center">
           {t('navigation.favorites')}
         </Text>
       </View>
@@ -107,21 +105,44 @@ export default function FavoritesScreen({ navigation }: Props) {
             borderColor: colors.warning,
           }}
         >
-          <Ionicons name="time-outline" size={18} color={colors.warning} />
-          <Text className="text-text-primary text-sm flex-1">
+          <Ionicons name="information-circle-outline" size={18} color={colors.warning} />
+          <Text className="text-text-primary text-sm flex-1" numberOfLines={2} style={{ minWidth: 0 }}>
             {missedCount === 1
               ? t('customer.favoritesStaleOne')
               : t('customer.favoritesStaleMany', { count: missedCount })}
           </Text>
+          <TouchableOpacity
+            onPress={onRemoveExpired}
+            disabled={isRemovingExpired}
+            className="flex-row items-center"
+            style={{ gap: 2, flexShrink: 0 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
+          >
+            {isRemovingExpired ? (
+              <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
+            ) : (
+              <>
+                <Text className="text-primary text-sm font-semibold">
+                  {t('customer.favoritesRemoveExpired')}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={colors.primary.DEFAULT} />
+              </>
+            )}
+          </TouchableOpacity>
         </View>
       )}
 
       <FlatList
-        data={rows}
-        keyExtractor={(row) => row.map(o => String(o.id)).join('-')}
-        renderItem={renderRow}
+        data={favorites}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderItem}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-        contentContainerStyle={{ paddingTop: 4, paddingBottom: insets.bottom + 16 }}
+        contentContainerStyle={{
+          paddingTop: 4,
+          paddingBottom: insets.bottom + 16,
+          flexGrow: favorites.length === 0 ? 1 : undefined,
+        }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -133,7 +154,7 @@ export default function FavoritesScreen({ navigation }: Props) {
         }
         ListEmptyComponent={
           initialized && !isLoading ? (
-            <View className="items-center justify-center px-8 py-24">
+            <View className="flex-1 items-center justify-center px-8">
               <Ionicons name="heart-outline" size={56} color={colors.primary[200]} />
               <Text className="text-text-primary text-base font-semibold text-center mt-4">
                 {t('customer.noFavorites')}

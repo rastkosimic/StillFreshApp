@@ -101,7 +101,7 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <View className="flex-row items-center px-4 py-3 gap-3">
         <BackButton onPress={() => navigation.goBack()} />
-        <Text className="text-lg font-bold text-text-primary flex-1">
+        <Text className="text-lg font-bold text-primary flex-1">
           {t('customer.paymentMethods')}
         </Text>
       </View>
@@ -113,6 +113,7 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
       ) : (
         <ScrollView
           className="flex-1 px-4"
+          contentContainerStyle={{ flexGrow: methods.length === 0 ? 1 : undefined }}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -122,7 +123,7 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
           }
         >
           {methods.length === 0 ? (
-            <View className="items-center py-16 px-6">
+            <View className="flex-1 items-center justify-center px-6">
               <Ionicons name="leaf-outline" size={56} color={colors.primary[200]} />
               <Text className="text-base font-semibold text-text-primary text-center mt-4">
                 {t('customer.noPaymentMethods')}
@@ -152,7 +153,7 @@ export default function PaymentMethodsScreen({ navigation }: Props) {
 
       <View className="px-4 pb-4" style={{ paddingBottom: insets.bottom + 16 }}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('AllSecureCardRegistration')}
+          onPress={() => navigation.navigate('CardRegistrationGuide')}
           className="bg-primary rounded-xl py-4 items-center"
           activeOpacity={0.8}
         >

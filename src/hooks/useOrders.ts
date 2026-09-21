@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   cancelOrder,
   confirmPickup,
+  getActiveOrders,
   getOrders,
 } from '@/services/orderService';
 import { useLocationStore } from '@/stores/locationStore';
@@ -20,10 +21,18 @@ interface UseOrdersResult {
   hasMore: boolean;
   totalElements: number;
   loadMore: () => Promise<void>;
-  refresh: () => Promise<void>;
+  refresh: (options?: { silent?: boolean }) => Promise<void>;
   markRemoved: (orderId: number | string) => void;
   confirmPickupWithPolling: (orderId: number | string) => Promise<Order>;
   cancelOrderWithLocation: (orderId: number | string, reason?: string) => Promise<void>;
+}
+
+function isActiveOrderStatusFilter(filter?: OrderStatus | OrderStatus[]): boolean {
+  return (
+    Array.isArray(filter) &&
+    filter.length === ACTIVE_ORDER_STATUSES.length &&
+    ACTIVE_ORDER_STATUSES.every((status) => filter.includes(status))
+  );
 }
 
 function matchesStatusFilter(order: Order, filter?: OrderStatus | OrderStatus[]): boolean {
@@ -41,6 +50,8 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
   const [hasMore, setHasMore] = useState(true);
   const [totalElements, setTotalElements] = useState(0);
   const removedIdsRef = useRef<Set<string>>(new Set());
+  const ordersRef = useRef<Order[]>([]);
+  ordersRef.current = orders;
 
   const apiStatus =
     statusFilter && !Array.isArray(statusFilter) ? statusFilter : undefined;
@@ -65,12 +76,19 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
   );
 
   const fetchPage = useCallback(
-    async (pageNum: number, reset: boolean) => {
-      setIsLoading(true);
+    async (pageNum: number, reset: boolean, options?: { silent?: boolean }) => {
+      const showLoading = !(options?.silent && ordersRef.current.length > 0);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       setError(null);
       try {
-        const result = await getOrders(pageNum, 20, apiStatus);
-        const content = applyClientFilter(result.content);
+        const result = isActiveOrderStatusFilter(statusFilter)
+          ? await getActiveOrders(pageNum, 20)
+          : await getOrders(pageNum, 20, apiStatus);
+        const content = isActiveOrderStatusFilter(statusFilter)
+          ? filterRemoved(result.content)
+          : applyClientFilter(result.content);
         setOrders((prev) => (reset ? content : [...prev, ...content]));
         setHasMore(!result.last);
         setPage(pageNum);
@@ -78,13 +96,18 @@ export function useOrders(options: UseOrdersOptions = {}): UseOrdersResult {
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load orders');
       } finally {
-        setIsLoading(false);
+        if (showLoading) {
+          setIsLoading(false);
+        }
       }
     },
-    [apiStatus, applyClientFilter],
+    [apiStatus, applyClientFilter, filterRemoved, statusFilter],
   );
 
-  const refresh = useCallback(() => fetchPage(0, true), [fetchPage]);
+  const refresh = useCallback(
+    (options?: { silent?: boolean }) => fetchPage(0, true, options),
+    [fetchPage],
+  );
 
   useEffect(() => {
     void fetchPage(0, true);

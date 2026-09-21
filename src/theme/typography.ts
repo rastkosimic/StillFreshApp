@@ -1,28 +1,40 @@
-// Font size scale — mirrors Tailwind's default text-* scale
-// Use Tailwind classes (text-sm, text-base, etc.) in components.
-// Import here only when programmatic access is required (e.g., chart axis labels).
+import { Text, TextInput } from 'react-native';
 
-export const fontSize = {
-  xs: 12,
-  sm: 14,
-  base: 16,
-  lg: 18,
-  xl: 20,
-  '2xl': 24,
-  '3xl': 30,
-  '4xl': 36,
+/**
+ * StillFresh type system.
+ * Display (Bricolage) = Još Sveže wordmark only.
+ * UI (Figtree) = all other app text.
+ * Loaded names match @expo-google-fonts file registrations.
+ */
+export const fonts = {
+  display: 'BricolageGrotesque_700Bold',
+  ui: {
+    regular: 'Figtree_400Regular',
+    medium: 'Figtree_500Medium',
+    semibold: 'Figtree_600SemiBold',
+    bold: 'Figtree_700Bold',
+    extrabold: 'Figtree_800ExtraBold',
+  },
 } as const;
 
-export const lineHeight = {
-  tight: 1.25,
-  snug: 1.375,
-  normal: 1.5,
-  relaxed: 1.625,
-} as const;
+type HostDefaults = { defaultProps?: { style?: unknown } };
 
-export const fontWeight = {
-  normal: '400',
-  medium: '500',
-  semibold: '600',
-  bold: '700',
-} as const;
+function prependDefaultFont(component: HostDefaults, fontFamily: string): void {
+  const prev = component.defaultProps?.style;
+  component.defaultProps = {
+    ...component.defaultProps,
+    style: prev ? [{ fontFamily }, prev] : { fontFamily },
+  };
+}
+
+let defaultUiFontApplied = false;
+
+/** Call once after fonts have loaded so unstyled Text/TextInput use Figtree. */
+export function applyDefaultUiFont(): void {
+  if (defaultUiFontApplied) {
+    return;
+  }
+  prependDefaultFont(Text as unknown as HostDefaults, fonts.ui.regular);
+  prependDefaultFont(TextInput as unknown as HostDefaults, fonts.ui.regular);
+  defaultUiFontApplied = true;
+}

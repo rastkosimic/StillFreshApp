@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -30,11 +30,12 @@ import {
 import { colors } from '@/theme/colors';
 import { Order, RatingResponse } from '@/types';
 import { ApiError } from '@/types';
-import { formatPickupDeadline } from '@/utils/formatDate';
+import { formatVendorPickupSchedule } from '@/utils/formatDate';
 import { formatOrderAmount } from '@/utils/formatOrderAmount';
 import { isActiveOrderStatus, orderStatusColor, orderStatusI18nKey } from '@/utils/orderStatus';
 import { PickupCaptureTimeoutError, pollOrderStatus } from '@/utils/orderPolling';
 import { useLocationStore } from '@/stores/locationStore';
+import { useBasketStore } from '@/stores/basketStore';
 
 type Props = CustomerStackScreenProps<'OrderDetail'>;
 
@@ -55,6 +56,14 @@ export default function OrderDetailScreen({ route, navigation }: Props) {
   const [existingRating, setExistingRating] = useState<RatingResponse | null>(null);
   const [orderHasRating, setOrderHasRating] = useState<boolean | null>(null);
   const [isLoadingRatingStatus, setIsLoadingRatingStatus] = useState(false);
+  const shouldNavigateHomeAfterRatingRef = useRef(false);
+
+  const navigateHome = useCallback(() => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'CustomerTabs', params: { screen: 'CustomerHome' } }],
+    });
+  }, [navigation]);
 
   const loadOrder = useCallback(async () => {
     setIsLoading(true);
@@ -101,7 +110,10 @@ export default function OrderDetailScreen({ route, navigation }: Props) {
   }, [order?.status, order?.id, loadRatingStatus]);
 
   const openRatingModal = useCallback(
-    async (targetOrder: Order, options?: { isUpdate?: boolean }) => {
+    async (
+      targetOrder: Order,
+      options?: { isUpdate?: boolean; navigateHomeAfter?: boolean },
+    ) => {
       const vendorId = getOrderVendorId(targetOrder);
       if (vendorId == null) return;
 
@@ -117,6 +129,7 @@ export default function OrderDetailScreen({ route, navigation }: Props) {
         }
       }
 
+      shouldNavigateHomeAfterRatingRef.current = options?.navigateHomeAfter ?? false;
       setRatingVendorId(vendorId);
       setRatingOrderId(targetOrder.id);
       setRatingVendorName(getOrderVendorName(targetOrder));
@@ -133,6 +146,7 @@ export default function OrderDetailScreen({ route, navigation }: Props) {
       await confirmPickup(order.id);
       const updated = await pollOrderStatus(order.id, 'COMPLETED');
       setOrder(updated);
+      void useBasketStore.getState().fetchActiveCount();
       Alert.alert(t('common.success'), t('customer.pickupConfirmed'), [
         {
           text: t('common.ok'),
@@ -140,10 +154,10 @@ export default function OrderDetailScreen({ route, navigation }: Props) {
             try {
               const alreadyRated = await hasOrderBeenRated(updated.id);
               if (!alreadyRated) {
-                await openRatingModal(updated, { isUpdate: false });
+                await openRatingModal(updated, { isUpdate: false, navigateHomeAfter: true });
               }
             } catch {
-              await openRatingModal(updated, { isUpdate: false });
+              await openRatingModal(updated, { isUpdate: false, navigateHomeAfter: true });
             }
           },
         },
@@ -185,6 +199,7 @@ export default function OrderDetailScreen({ route, navigation }: Props) {
         reason,
         ...(userLat != null && userLon != null ? { userLat, userLon } : {}),
       });
+      void useBasketStore.getState().fetchActiveCount();
       setCancelVisible(false);
       Alert.alert(t('common.success'), t('customer.orderCancelled'), [
         { text: t('common.ok'), onPress: () => navigation.goBack() },
@@ -202,12 +217,20 @@ export default function OrderDetailScreen({ route, navigation }: Props) {
     setRatingOrderId(null);
     setRatingVendorName('');
     setIsRatingUpdate(false);
+    shouldNavigateHomeAfterRatingRef.current = false;
   };
 
   const handleRatingSubmitted = () => {
+    const shouldNavigateHome = shouldNavigateHomeAfterRatingRef.current;
+    shouldNavigateHomeAfterRatingRef.current = false;
+
     void loadOrder();
     if (order?.status === 'COMPLETED') {
       void loadRatingStatus(order);
+    }
+
+    if (shouldNavigateHome) {
+      navigateHome();
     }
   };
 
@@ -235,13 +258,14 @@ export default function OrderDetailScreen({ route, navigation }: Props) {
   const isActive = isActiveOrderStatus(order.status);
   const isCompleted = order.status === 'COMPLETED';
   const statusColor = orderStatusColor(order.status);
+  const pickupSchedule = formatVendorPickupSchedule(order, i18n.language);
   const canRateOrder = isCompleted && getOrderVendorId(order) != null;
 
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <View className="flex-row items-center px-4 py-3 gap-3">
         <BackButton onPress={() => navigation.goBack()} />
-        <Text className="text-lg font-bold text-text-primary flex-1">
+        <Text className="text-lg font-bold text-primary flex-1">
           {t('customer.orderDetail')}
         </Text>
       </View>
@@ -252,86 +276,96 @@ export default function OrderDetailScreen({ route, navigation }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <View
-          className="bg-surface rounded-[14px] p-4 mb-4"
+          className="bg-surface rounded-2xl overflow-hidden mb-4"
           style={{
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.06,
-            shadowRadius: 3,
-            elevation: 2,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.12,
+            shadowRadius: 6,
+            elevation: 3,
           }}
         >
-          <View className="flex-row gap-3 mb-4">
-            <View className="w-20 h-20 rounded-xl overflow-hidden bg-primary-100">
+          <View style={{ height: 140 }}>
+            <View className="absolute inset-0 bg-primary-100">
               <AuthImage
                 uri={order.offerImageUrl ?? order.vendorImageUrl}
-                style={{ width: '100%', height: '100%' }}
+                style={{ width: '100%', height: 140 }}
                 contentFit="cover"
                 fallback={
-                  <View className="flex-1 items-center justify-center">
-                    <Ionicons name="bag-handle-outline" size={28} color={colors.primary[400]} />
+                  <View className="flex-1 items-center justify-center bg-primary-100">
+                    <Ionicons name="bag-handle-outline" size={36} color={colors.primary[400]} />
                   </View>
                 }
               />
+              <View className="absolute inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }} />
             </View>
-            <View className="flex-1">
-              <Text className="text-base font-bold text-text-primary" numberOfLines={2}>
+
+            <View className="flex-1 justify-end px-4 py-3">
+              <Text className="text-white font-bold text-base" numberOfLines={2}>
                 {order.offerName}
               </Text>
               {vendorName.length > 0 && (
-                <Text className="text-sm text-text-secondary mt-1">{vendorName}</Text>
+                <Text className="text-white text-xs mt-0.5" numberOfLines={1}>
+                  {vendorName}
+                </Text>
               )}
-              <Text className="text-xs font-semibold mt-2" style={{ color: statusColor }}>
-                {t(orderStatusI18nKey(order.status))}
-              </Text>
+              <View className="flex-row items-center mt-2">
+                <View className="rounded-full px-2 py-0.5 bg-surface">
+                  <Text className="text-xs font-semibold" style={{ color: statusColor }}>
+                    {t(orderStatusI18nKey(order.status))}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
 
-          {order.pickupBy != null && (
-            <View className="mb-3">
-              <Text className="text-xs text-text-secondary">{t('customer.pickupBy')}</Text>
-              <Text className="text-sm font-semibold text-text-primary mt-0.5">
-                {formatPickupDeadline(order.pickupBy, i18n.language)}
+          <View className="px-4 pt-4 pb-4">
+            {pickupSchedule != null && (
+              <View className="mb-3">
+                <Text className="text-xs text-text-secondary">{t('customer.pickupBy')}</Text>
+                <Text className="text-sm font-semibold text-text-primary mt-0.5">
+                  {pickupSchedule}
+                </Text>
+              </View>
+            )}
+
+            {order.address != null && (
+              <View className="mb-3">
+                <Text className="text-xs text-text-secondary">{t('customer.directions')}</Text>
+                <Text className="text-sm text-text-primary mt-0.5">{order.address}</Text>
+              </View>
+            )}
+
+            <View className="flex-row justify-between mb-2">
+              <Text className="text-sm text-text-secondary">{t('customer.quantity')}</Text>
+              <Text className="text-sm font-semibold text-text-primary">{order.quantity}</Text>
+            </View>
+
+            <View className="flex-row justify-between border-t border-border pt-3 mt-2">
+              <Text className="text-base font-bold text-text-primary">{t('customer.total')}</Text>
+              <Text className="text-base font-extrabold text-primary">
+                {formatOrderAmount(order.totalPrice, currency)}
               </Text>
             </View>
-          )}
 
-          {order.address != null && (
-            <View className="mb-3">
-              <Text className="text-xs text-text-secondary">{t('customer.directions')}</Text>
-              <Text className="text-sm text-text-primary mt-0.5">{order.address}</Text>
-            </View>
-          )}
-
-          <View className="flex-row justify-between mb-2">
-            <Text className="text-sm text-text-secondary">{t('customer.quantity')}</Text>
-            <Text className="text-sm font-semibold text-text-primary">{order.quantity}</Text>
-          </View>
-
-          <View className="flex-row justify-between border-t border-border pt-3 mt-2">
-            <Text className="text-base font-bold text-text-primary">{t('customer.total')}</Text>
-            <Text className="text-base font-extrabold text-primary">
-              {formatOrderAmount(order.totalPrice, currency)}
-            </Text>
-          </View>
-
-          {isCompleted && (
-            <Text className="text-xs text-text-secondary mt-3">{t('customer.paymentCaptured')}</Text>
-          )}
-          {isActive && order.paymentIntentId != null && (
-            <Text className="text-xs text-text-secondary mt-3">
-              {t('customer.paymentAuthorized')}
-            </Text>
-          )}
-
-          {isCompleted && orderHasRating === true && existingRating != null && (
-            <View className="flex-row items-center mt-3" style={{ gap: 4 }}>
-              <Ionicons name="star" size={14} color={colors.rating} />
-              <Text className="text-sm font-semibold text-text-primary">
-                {t('ratings.yourRating', { rating: existingRating.totalRating.toFixed(1) })}
+            {isCompleted && (
+              <Text className="text-xs text-text-secondary mt-3">{t('customer.paymentCaptured')}</Text>
+            )}
+            {isActive && order.paymentIntentId != null && (
+              <Text className="text-xs text-text-secondary mt-3">
+                {t('customer.paymentAuthorized')}
               </Text>
-            </View>
-          )}
+            )}
+
+            {isCompleted && orderHasRating === true && existingRating != null && (
+              <View className="flex-row items-center mt-3" style={{ gap: 4 }}>
+                <Ionicons name="star" size={14} color={colors.rating} />
+                <Text className="text-sm font-semibold text-text-primary">
+                  {t('ratings.yourRating', { rating: existingRating.totalRating.toFixed(1) })}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {isActive && (

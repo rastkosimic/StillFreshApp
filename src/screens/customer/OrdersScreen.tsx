@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import OrderCard from '@/components/OrderCard';
 import { ACTIVE_ORDER_STATUSES, useOrders } from '@/hooks/useOrders';
 import { CustomerTabScreenProps } from '@/navigation/types';
+import { useBasketStore } from '@/stores/basketStore';
 import { colors } from '@/theme/colors';
 
 type Props = CustomerTabScreenProps<'Orders'>;
@@ -21,14 +22,24 @@ type Props = CustomerTabScreenProps<'Orders'>;
 export default function OrdersScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { orders, isLoading, refresh, loadMore, hasMore } = useOrders({
+  const { orders, isLoading, refresh, loadMore, hasMore, totalElements } = useOrders({
     status: ACTIVE_ORDER_STATUSES,
   });
+  const setActiveCount = useBasketStore((state) => state.setActiveCount);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const isFirstFocus = useRef(true);
+
+  useEffect(() => {
+    setActiveCount(totalElements);
+  }, [setActiveCount, totalElements]);
 
   useFocusEffect(
     useCallback(() => {
-      void refresh();
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
+      }
+      void refresh({ silent: true });
     }, [refresh]),
   );
 
@@ -41,7 +52,7 @@ export default function OrdersScreen({ navigation }: Props) {
   return (
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <View className="px-4 py-3">
-        <Text className="text-2xl font-bold text-text-primary">{t('customer.basket')}</Text>
+        <Text className="text-2xl font-bold text-primary text-center">{t('customer.basket')}</Text>
       </View>
 
       {isLoading && orders.length === 0 ? (
@@ -52,8 +63,11 @@ export default function OrdersScreen({ navigation }: Props) {
         <FlatList
           data={orders}
           keyExtractor={(item) => String(item.id)}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingHorizontal: 16,
+            paddingTop: 4,
             paddingBottom: insets.bottom + 16,
             flexGrow: orders.length === 0 ? 1 : undefined,
           }}

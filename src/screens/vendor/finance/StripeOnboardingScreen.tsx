@@ -68,13 +68,13 @@ export default function StripeOnboardingScreen({ navigation }: Props) {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View style={{
-        backgroundColor: colors.surface,
+        backgroundColor: colors.background,
         paddingTop: 52, paddingHorizontal: 20, paddingBottom: 14,
         flexDirection: 'row', alignItems: 'center', gap: 12,
         borderBottomWidth: 1, borderBottomColor: colors.border,
       }}>
         <BackButton onPress={() => navigation.goBack()} />
-        <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colors.text.primary }}>
+        <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colors.primary.DEFAULT }}>
           {t('payment.setupAction')}
         </Text>
       </View>

@@ -1,12 +1,13 @@
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ImageStyle, StyleProp, Text, View } from 'react-native';
+import { ImageStyle, LayoutChangeEvent, StyleProp, Text, View } from 'react-native';
 
-import { brandAssets } from '@/config/brandAssets';
+import { BRAND_ICON_REVISION, brandAssets } from '@/config/brandAssets';
 
 type BrandLogoVariant = 'icon' | 'stacked';
 
-const DEFAULT_ICON_SIZE = 72;
+const DEFAULT_ICON_SIZE = 108;
 
 interface BrandLogoProps {
   variant: BrandLogoVariant;
@@ -28,18 +29,31 @@ export default function BrandLogo({
   const { t } = useTranslation();
   const appName = accessibilityLabel ?? t('auth.appName');
   const iconSize = width ?? height ?? DEFAULT_ICON_SIZE;
+  const [wordmarkWidth, setWordmarkWidth] = useState(iconSize);
+
+  const onWordmarkLayout = (event: LayoutChangeEvent) => {
+    const next = Math.round(event.nativeEvent.layout.width);
+    if (next > 0 && next !== wordmarkWidth) {
+      setWordmarkWidth(next);
+    }
+  };
 
   if (variant === 'stacked') {
     return (
       <View className={`w-full items-center ${className ?? ''}`} accessibilityRole="header">
         <Image
           source={brandAssets.icon}
-          style={[{ width: iconSize, height: iconSize }, style]}
+          style={[{ width: wordmarkWidth, height: wordmarkWidth }, style]}
           contentFit="contain"
+          cachePolicy="none"
+          recyclingKey={`auth-icon-${BRAND_ICON_REVISION}`}
           accessibilityRole="image"
           accessibilityLabel={appName}
         />
-        <Text className="text-primary text-3xl font-bold tracking-tight mt-2 text-center">
+        <Text
+          className="text-primary text-3xl font-display tracking-tight mt-2 text-center"
+          onLayout={onWordmarkLayout}
+        >
           {appName}
         </Text>
       </View>
@@ -52,6 +66,8 @@ export default function BrandLogo({
         source={brandAssets.icon}
         style={[{ width: iconSize, height: iconSize }, style]}
         contentFit="contain"
+        cachePolicy="none"
+        recyclingKey={`auth-icon-${BRAND_ICON_REVISION}`}
         accessibilityRole="image"
         accessibilityLabel={appName}
       />

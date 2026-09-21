@@ -16,8 +16,8 @@ const Tab = createBottomTabNavigator<VendorTabParamList>();
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 function tabIcon(active: IoniconsName, inactive: IoniconsName) {
-  return ({ color, size }: { color: string; size: number }) => (
-    <Ionicons name={active} size={size} color={color} />
+  return ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+    <Ionicons name={focused ? active : inactive} size={size} color={color} />
   );
 }
 
@@ -34,7 +34,12 @@ export default function VendorTabs() {
         tabBarInactiveTintColor: colors.text.secondary,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        tabBarBadgeStyle: {
+          backgroundColor: colors.error,
         },
       }}
     >

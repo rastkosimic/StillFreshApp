@@ -90,10 +90,15 @@ const createApiClient = (defaultHeaders?: Record<string, string>): AxiosInstance
 
 function buildApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
-    const message =
-      (error.response?.data as { message?: string })?.message ??
-      error.message ??
-      'An unexpected error occurred';
+    const data = error.response?.data as
+      | { message?: string; errorMessage?: string; error?: string }
+      | string
+      | undefined;
+    const fromBody =
+      typeof data === 'string'
+        ? data
+        : (data?.errorMessage ?? data?.message ?? data?.error);
+    const message = fromBody || error.message || 'An unexpected error occurred';
     return {
       message,
       status: error.response?.status,

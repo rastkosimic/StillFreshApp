@@ -7,20 +7,27 @@
     "scheme": "stillfresh",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "androidNavigationBar": {
+      "backgroundColor": "#FFFFFF",
+      "barStyle": "dark-content"
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F7FBF9"
+      "backgroundColor": "#FAF7F1"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.stillfreshmobile"
+      "bundleIdentifier": "com.stillfreshmobile",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["comgooglemaps"]
+      }
     },
     "android": {
       "package": "com.stillfreshmobile",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#FDFFFE"
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundColor": "#FAF7F1"
       },
       "usesCleartextTraffic": true,
       "predictiveBackGestureEnabled": false,
@@ -38,6 +45,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-font",
       "expo-secure-store",
       "expo-web-browser",
       [
@@ -51,10 +59,11 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#2C5F2E",
+          "color": "#9E9E9E",
           "sounds": []
         }
       ],
+      "./plugins/withNotificationIcons.js",
       [
         "expo-image-picker",
         {

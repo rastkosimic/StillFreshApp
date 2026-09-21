@@ -229,7 +229,7 @@ export default function CustomerProfileScreen({ navigation }: Props) {
         }
       >
         <View style={{ paddingTop: insets.top + 12 }} className="px-4 pb-2">
-          <Text className="text-2xl font-bold text-text-primary">{t('navigation.profile')}</Text>
+          <Text className="text-2xl font-bold text-primary text-center">{t('navigation.profile')}</Text>
         </View>
 
         {error != null && (

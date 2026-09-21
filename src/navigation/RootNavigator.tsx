@@ -19,7 +19,7 @@ export default function RootNavigator() {
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
-        <BrandLogo variant="icon" width={80} height={80} className="mb-6" />
+        <BrandLogo variant="icon" width={120} height={120} className="mb-6" />
         <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
       </View>
     );

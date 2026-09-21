@@ -100,11 +100,11 @@ export default function UpgradeToChainScreen({ navigation }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View
-        className="bg-surface border-b border-border px-5 pb-3.5 flex-row items-center gap-3"
+        className="bg-background border-b border-border px-5 pb-3.5 flex-row items-center gap-3"
         style={{ paddingTop: insets.top + 12 }}
       >
         <BackButton onPress={() => navigation.goBack()} />
-        <Text className="flex-1 text-[17px] font-semibold text-text-primary">
+        <Text className="flex-1 text-[17px] font-semibold text-primary">
           {t('vendor.upgradeToChainScreen.title')}
         </Text>
       </View>

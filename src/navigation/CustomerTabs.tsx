@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import TabBarIconWithBadge from '@/components/TabBarIconWithBadge';
 import CustomerHomeScreen from '@/screens/customer/CustomerHomeScreen';
 import CustomerProfileScreen from '@/screens/customer/CustomerProfileScreen';
 import FavoritesScreen from '@/screens/customer/FavoritesScreen';
 import OrdersScreen from '@/screens/customer/OrdersScreen';
+import { useBasketStore } from '@/stores/basketStore';
 import { colors } from '@/theme/colors';
 
 import { CustomerTabParamList } from './types';
@@ -15,13 +18,30 @@ const Tab = createBottomTabNavigator<CustomerTabParamList>();
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 function tabIcon(active: IoniconsName, inactive: IoniconsName) {
-  return ({ color, size }: { color: string; size: number }) => (
-    <Ionicons name={active} size={size} color={color} />
+  return ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+    <Ionicons name={focused ? active : inactive} size={size} color={color} />
+  );
+}
+
+function tabIconWithBadge(active: IoniconsName, inactive: IoniconsName, badge?: number) {
+  return ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+    <TabBarIconWithBadge
+      name={focused ? active : inactive}
+      color={color}
+      size={size}
+      badge={badge}
+    />
   );
 }
 
 export default function CustomerTabs() {
   const { t } = useTranslation();
+  const activeCount = useBasketStore((state) => state.activeCount);
+  const fetchActiveCount = useBasketStore((state) => state.fetchActiveCount);
+
+  useEffect(() => {
+    void fetchActiveCount();
+  }, [fetchActiveCount]);
 
   return (
     <Tab.Navigator
@@ -32,7 +52,12 @@ export default function CustomerTabs() {
         tabBarInactiveTintColor: colors.text.secondary,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        tabBarBadgeStyle: {
+          backgroundColor: colors.error,
         },
       }}
     >
@@ -57,7 +82,7 @@ export default function CustomerTabs() {
         component={OrdersScreen}
         options={{
           title: t('customer.basket'),
-          tabBarIcon: tabIcon('bag', 'bag-outline'),
+          tabBarIcon: tabIconWithBadge('bag', 'bag-outline', activeCount > 0 ? activeCount : undefined),
         }}
       />
       <Tab.Screen

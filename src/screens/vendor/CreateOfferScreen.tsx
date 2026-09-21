@@ -159,13 +159,13 @@ export default function CreateOfferScreen({ navigation }: Props) {
           paddingTop: 56,
           paddingBottom: 14,
           paddingHorizontal: 16,
-          backgroundColor: colors.surface,
+          backgroundColor: colors.background,
           borderBottomWidth: 1,
           borderBottomColor: colors.border,
         }}
       >
         <BackButton onPress={() => navigation.goBack()} />
-        <Text style={{ fontSize: 17, fontWeight: '600', color: colors.text.primary }}>
+        <Text style={{ fontSize: 17, fontWeight: '600', color: colors.primary.DEFAULT }}>
           {t('vendor.createOffer')}
         </Text>
         <TouchableOpacity

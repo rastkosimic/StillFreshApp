@@ -47,6 +47,7 @@ export type CustomerStackParamList = {
   VendorMap: undefined;
   OfferDetails: { offerId: number };
   PaymentMethods: undefined;
+  CardRegistrationGuide: undefined;
   AllSecureCardRegistration: undefined;
   OrderPending: { offerId: number; quantity: number };
   OrderDetail: { orderId: number | string };

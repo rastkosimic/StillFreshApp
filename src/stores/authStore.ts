@@ -74,9 +74,12 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
 
     // 1. Best-effort FCM token deregistration — must run before JWT is cleared
     if (token) {
-      import('@/services/notificationService').then(({ removeFCMToken }) => {
-        removeFCMToken().catch(() => {});
-      }).catch(() => {});
+      try {
+        const { removeFCMToken } = await import('@/services/notificationService');
+        await removeFCMToken();
+      } catch {
+        // Non-fatal: logout must continue even if deregister fails
+      }
     }
 
     set({
@@ -99,6 +102,10 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     // 3. Clear notification state
     import('@/stores/notificationStore').then(({ useNotificationStore }) => {
       useNotificationStore.getState().resetUnreadCount();
+    }).catch(() => {});
+
+    import('@/stores/basketStore').then(({ useBasketStore }) => {
+      useBasketStore.getState().resetBasketCount();
     }).catch(() => {});
 
     // 4. Clear favorites — dynamic import avoids circular dependency at module load time

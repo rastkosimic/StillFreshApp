@@ -152,12 +152,12 @@ function FullScreenPicker({ visible, initial, onCancel, onConfirm }: FullScreenP
     <Modal visible={visible} animationType="slide" onRequestClose={onCancel}>
       <View className="flex-1 bg-background">
         <View
-          className="bg-surface border-b border-border px-5 pb-3.5 flex-row items-center gap-3"
+          className="bg-background border-b border-border px-5 pb-3.5 flex-row items-center gap-3"
           style={{ paddingTop: insets.top + 12 }}
         >
           <BackButton onPress={onCancel} />
           <View className="flex-1">
-            <Text className="text-[17px] font-semibold text-text-primary">
+            <Text className="text-[17px] font-semibold text-primary">
               {t('vendor.locationForm.pinPickerTitle')}
             </Text>
             <Text className="text-xs text-text-secondary mt-0.5">

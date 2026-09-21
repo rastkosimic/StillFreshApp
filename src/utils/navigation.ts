@@ -1,12 +1,11 @@
 import { Alert, Linking, Platform } from 'react-native';
 
 /**
- * Opens Google Maps app (if installed) or falls back to the browser version
- * to give the user turn-by-turn navigation to a vendor's location.
+ * Opens turn-by-turn navigation to a vendor. Tries the Google Maps app first,
+ * then platform geo URLs, then the Google Maps website.
  *
- * Deep link scheme:
- *   Android/iOS app: comgooglemaps://?daddr=lat,lng
- *   Web fallback:    https://maps.google.com/?daddr=lat,lng
+ * Do not gate on Linking.canOpenURL — Android 11+ package visibility often
+ * makes it return false even when google.navigation: works.
  */
 export async function navigateToVendor(
   latitude: number,
@@ -15,23 +14,27 @@ export async function navigateToVendor(
 ): Promise<void> {
   const destination = `${latitude},${longitude}`;
   const label = vendorName ? encodeURIComponent(vendorName) : '';
+  const labelledGeo = label
+    ? `geo:${destination}?q=${destination}(${label})`
+    : `geo:${destination}?q=${destination}`;
+  const web = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
 
-  // Google Maps app deep link (works on both Android and iOS if app is installed)
-  const googleMapsApp =
+  const candidates: string[] =
     Platform.OS === 'ios'
-      ? `comgooglemaps://?daddr=${destination}&directionsmode=walking`
-      : `google.navigation:q=${destination}`;
+      ? [
+          `comgooglemaps://?daddr=${destination}&directionsmode=driving`,
+          `maps://?daddr=${destination}&dirflg=d`,
+          web,
+        ]
+      : [`google.navigation:q=${destination}`, labelledGeo, web];
 
-  // Universal web fallback — works even without the Google Maps app
-  const googleMapsWeb = `https://maps.google.com/?daddr=${destination}${label ? `&q=${label}` : ''}`;
-
-  const canOpenApp = await Linking.canOpenURL(googleMapsApp);
-
-  if (canOpenApp) {
-    await Linking.openURL(googleMapsApp);
-  } else {
-    // Google Maps app not installed — open in browser
-    await Linking.openURL(googleMapsWeb);
+  for (const url of candidates) {
+    try {
+      await Linking.openURL(url);
+      return;
+    } catch {
+      // Try the next scheme.
+    }
   }
 }
 
@@ -50,7 +53,9 @@ export function navigateToVendorWithConfirm(
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Open Google Maps',
-        onPress: () => navigateToVendor(latitude, longitude, vendorName),
+        onPress: () => {
+          void navigateToVendor(latitude, longitude, vendorName);
+        },
       },
     ],
   );

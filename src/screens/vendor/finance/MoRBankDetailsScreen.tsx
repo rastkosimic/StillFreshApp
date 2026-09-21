@@ -426,13 +426,13 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View
-        className="bg-surface border-b border-border px-5 pb-3.5 flex-row items-center gap-2.5"
+        className="bg-background border-b border-border px-5 pb-3.5 flex-row items-center gap-2.5"
         style={{ paddingTop: insets.top + 12 }}
       >
         <BackButton onPress={isEditing ? onCancelEdit : () => navigation.goBack()} />
 
         <View className="flex-1">
-          <Text className="text-[17px] font-semibold text-text-primary text-center">
+          <Text className="text-[17px] font-semibold text-primary text-center">
             {t('payment.morBankDetails')}
           </Text>
           {isLocationScoped && locationName ? (

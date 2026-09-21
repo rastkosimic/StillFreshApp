@@ -8,3 +8,4 @@ export * from './payment.types';
 export * from './rating.types';
 export * from './user.types';
 export * from './vendor.types';
+export * from './vendorStats.types';

@@ -778,7 +778,7 @@ export default function OfferDetailsScreen({ route, navigation }: Props) {
           style={{
             position: 'absolute', top: 0, left: 0, right: 0,
             paddingTop: insets.top,
-            backgroundColor: colors.surface,
+            backgroundColor: colors.background,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.08,
@@ -795,7 +795,7 @@ export default function OfferDetailsScreen({ route, navigation }: Props) {
             <BackButton onPress={() => navigation.goBack()} />
             <Text
               style={{
-                flex: 1, fontSize: 16, fontWeight: '700', color: colors.text.primary,
+                flex: 1, fontSize: 16, fontWeight: '700', color: colors.primary.DEFAULT,
               }}
               numberOfLines={1}
             >

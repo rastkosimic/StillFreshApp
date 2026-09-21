@@ -5,16 +5,46 @@ const LOCALE_MAP: Record<string, string> = {
   bh: 'bs-BA',
 };
 
+/** Balkan vendor wall-clock timezone (Serbia, Croatia, Bosnia). */
+export const VENDOR_TIME_ZONE = 'Europe/Belgrade';
+
+export interface VendorPickupFields {
+  pickupDate?: string;
+  pickupStartTime?: string;
+  pickupEndTime?: string;
+  pickupBy?: string;
+}
+
+function localeTag(locale: string): string {
+  return LOCALE_MAP[locale] ?? 'sr-Latn-RS';
+}
+
 /**
  * Converts a YYYY-MM-DD date string to a human-readable locale date.
  * @example formatDate('2026-03-23', 'sr') → '23. mart 2026.'
  */
 export function formatDate(isoDate: string, locale = 'sr'): string {
   const date = new Date(isoDate + 'T00:00:00');
-  return date.toLocaleDateString(LOCALE_MAP[locale] ?? 'sr-Latn-RS', {
+  return date.toLocaleDateString(localeTag(locale), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+  });
+}
+
+/**
+ * Calendar date from a YYYY-MM-DD pickup date — never shifted by timezone.
+ * @example formatShortPickupDate('2026-09-18', 'sr') → '18. sep'
+ */
+export function formatShortPickupDate(ymd: string, locale = 'sr'): string {
+  const match = ymd.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return ymd;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return new Date(year, month - 1, day).toLocaleDateString(localeTag(locale), {
+    day: 'numeric',
+    month: 'short',
   });
 }
 
@@ -34,15 +64,75 @@ export function formatPickupWindow(start: string, end: string): string {
   return `${formatPickupTime(start)} - ${formatPickupTime(end)}`;
 }
 
-/** Formats an ISO 8601 pickup deadline for display. */
+/** Date + HH:MM as written in an ISO string, ignoring any Z / offset. */
+function wallClockFromIso(isoDateTime: string): { date: string; time: string } | null {
+  const match = isoDateTime.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  if (!match) return null;
+  return { date: match[1], time: match[2] };
+}
+
+/**
+ * Vendor-local pickup deadline. Uses the date/time written in the payload
+ * (same wall clock vendors enter), and does not convert through the phone TZ.
+ */
 export function formatPickupDeadline(isoDateTime: string, locale = 'sr'): string {
+  const wall = wallClockFromIso(isoDateTime);
+  if (wall) {
+    return `${formatShortPickupDate(wall.date, locale)} ${wall.time}`;
+  }
   const date = new Date(isoDateTime);
-  return date.toLocaleString(LOCALE_MAP[locale] ?? 'sr-Latn-RS', {
+  if (Number.isNaN(date.getTime())) return isoDateTime;
+  return date.toLocaleString(localeTag(locale), {
+    timeZone: VENDOR_TIME_ZONE,
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+/**
+ * Real instant (payouts, settlement) in the device locale.
+ * Do not use this for offer/reservation pickup clocks.
+ */
+export function formatInstant(isoDateTime: string, locale = 'sr'): string {
+  const date = new Date(isoDateTime);
+  return date.toLocaleString(localeTag(locale), {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+/**
+ * Pickup schedule in vendor local time — same clock as offer cards/details.
+ * Prefers pickupDate + start/end window; falls back to pickupBy wall clock.
+ */
+export function formatVendorPickupSchedule(
+  fields: VendorPickupFields,
+  locale = 'sr',
+): string | null {
+  const window =
+    fields.pickupStartTime && fields.pickupEndTime
+      ? formatPickupWindow(fields.pickupStartTime, fields.pickupEndTime)
+      : fields.pickupEndTime
+        ? formatPickupTime(fields.pickupEndTime)
+        : fields.pickupStartTime
+          ? formatPickupTime(fields.pickupStartTime)
+          : null;
+
+  const dateYmd =
+    fields.pickupDate?.match(/^\d{4}-\d{2}-\d{2}/)?.[0] ??
+    wallClockFromIso(fields.pickupBy ?? '')?.date;
+
+  if (dateYmd && window) {
+    return `${formatShortPickupDate(dateYmd, locale)}, ${window}`;
+  }
+  if (window) return window;
+  if (fields.pickupBy) return formatPickupDeadline(fields.pickupBy, locale);
+  if (dateYmd) return formatShortPickupDate(dateYmd, locale);
+  return null;
 }
 
 /**

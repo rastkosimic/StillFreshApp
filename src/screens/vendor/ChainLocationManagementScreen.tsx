@@ -197,12 +197,12 @@ export default function ChainLocationManagementScreen({ navigation, route }: Pro
   return (
     <View className="flex-1 bg-background">
       <View
-        className="bg-surface border-b border-border px-5 pb-3.5 flex-row items-center gap-3"
+        className="bg-background border-b border-border px-5 pb-3.5 flex-row items-center gap-3"
         style={{ paddingTop: insets.top + 12 }}
       >
         <BackButton onPress={() => navigation.goBack()} />
         <View className="flex-1">
-          <Text className="text-[17px] font-semibold text-text-primary">
+          <Text className="text-[17px] font-semibold text-primary">
             {t('vendor.locations.title')}
           </Text>
           {identity.chainName ? (
@@ -217,7 +217,10 @@ export default function ChainLocationManagementScreen({ navigation, route }: Pro
         </View>
       ) : (
         <ScrollView
-          contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 32,
+            flexGrow: sorted.length === 0 ? 1 : undefined,
+          }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -471,7 +474,7 @@ function Chip({ label, tone }: { label: string; tone: 'primary' | 'success' | 'm
 function EmptyState() {
   const { t } = useTranslation();
   return (
-    <View className="items-center px-10 py-12">
+    <View className="flex-1 items-center justify-center px-10">
       <Feather name="map-pin" size={48} color={colors.primary[200]} />
       <Text className="text-base font-semibold text-text-primary text-center mt-4">
         {t('vendor.locations.emptyTitle')}

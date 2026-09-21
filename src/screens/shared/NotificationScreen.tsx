@@ -17,11 +17,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '@/stores/authStore';
 import BackButton from '@/components/BackButton';
+import { useNotificationOrderStatuses } from '@/hooks/useNotificationOrderStatuses';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { colors } from '@/theme/colors';
-import { Notification, NotificationType } from '@/types';
-import { formatNotificationContent } from '@/utils/formatNotificationContent';
+import { Notification, NotificationType, OrderStatus } from '@/types';
+import {
+  formatNotificationContent,
+  FormattedNotification,
+} from '@/utils/formatNotificationContent';
+import { OrderNotificationBadge } from '@/utils/resolveNotificationType';
 import { formatRelativeTime } from '@/utils/formatDate';
+import { orderStatusColor } from '@/utils/orderStatus';
+import { getNotificationOrderId, resolveNotificationType } from '@/utils/resolveNotificationType';
 
 // ── Type icon config ──────────────────────────────────────────────────────────
 
@@ -37,7 +44,7 @@ const TYPE_ICON: Record<NotificationType, IconConfig> = {
   ORDER_CANCELLED: { name: 'close-circle', bg: '#FEECEC', tint: colors.error },
   ORDER_EXPIRED: { name: 'time-outline', bg: '#FFF4E5', tint: colors.warning },
   ORDER_PICKUP_REMINDER: { name: 'alarm-outline', bg: '#FFF4E5', tint: colors.warning },
-  PAYMENT_SUCCESSFUL: { name: 'card', bg: colors.primary[100], tint: colors.primary.DEFAULT },
+  PAYMENT_SUCCESSFUL: { name: 'checkmark-circle', bg: colors.primary[100], tint: colors.primary.DEFAULT },
   PAYMENT_FAILED: { name: 'card-outline', bg: '#FEECEC', tint: colors.error },
   BANK_TRANSFER_INITIATED: { name: 'swap-horizontal-outline', bg: colors.primary[50], tint: colors.primary.DEFAULT },
   BANK_TRANSFER_CONFIRMED: { name: 'checkmark-circle', bg: colors.primary[100], tint: colors.primary.DEFAULT },
@@ -60,7 +67,8 @@ function useNotificationNavigation() {
 
   return useCallback(
     (notification: Notification) => {
-      const { type, data = {} } = notification;
+      const type = resolveNotificationType(notification);
+      const data = notification.data ?? {};
       const orderId = data.orderId ?? data.requestId;
 
       if (isVendor) {
@@ -132,19 +140,80 @@ function DeleteAction({ onPress }: { onPress: () => void }) {
   );
 }
 
+// ── Status badge (order notifications) ──────────────────────────────────────
+
+const BADGE_STYLE: Record<
+  OrderNotificationBadge,
+  { bg: string; text: string } | null
+> = {
+  reserved: { bg: colors.primary[50], text: colors.primary.DEFAULT },
+  completed: { bg: colors.primary[50], text: colors.primary.DEFAULT },
+  expired: { bg: '#FFF4E5', text: colors.warning },
+  cancelled: { bg: '#FEECEC', text: colors.error },
+  reminder: { bg: '#FFF4E5', text: colors.warning },
+  payment: { bg: '#FEECEC', text: colors.error },
+  other: null,
+};
+
+function orderStatusBadgeStyle(status: OrderStatus): { bg: string; text: string } {
+  switch (status) {
+    case 'CONFIRMED':
+    case 'READY':
+    case 'PROCESSING':
+      return { bg: colors.primary[50], text: orderStatusColor(status) };
+    case 'COMPLETED':
+      return { bg: colors.primary[50], text: colors.primary.DEFAULT };
+    case 'EXPIRED':
+    case 'CANCELLED':
+      return { bg: '#FEECEC', text: colors.error };
+    default:
+      return { bg: colors.border, text: colors.text.secondary };
+  }
+}
+
+function NotificationBadge({
+  label,
+  kind,
+  orderStatus,
+}: {
+  label: string;
+  kind: OrderNotificationBadge;
+  orderStatus?: OrderStatus;
+}) {
+  const style =
+    orderStatus != null ? orderStatusBadgeStyle(orderStatus) : BADGE_STYLE[kind];
+  if (!style) return null;
+
+  return (
+    <View
+      className="self-start rounded-full px-2 py-0.5 mb-1"
+      style={{ backgroundColor: style.bg }}
+    >
+      <Text className="text-[10px] font-bold uppercase tracking-wide" style={{ color: style.text }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 // ── Single notification row ───────────────────────────────────────────────────
 
 type NotificationRowProps = {
   item: Notification;
+  isVendor: boolean;
+  orderStatus?: OrderStatus;
   onTap: (notification: Notification) => void;
   onDelete: (id: string) => void;
 };
 
-function NotificationRow({ item, onTap, onDelete }: NotificationRowProps) {
+function NotificationRow({ item, isVendor, orderStatus, onTap, onDelete }: NotificationRowProps) {
   const { t } = useTranslation();
   const swipeRef = useRef<Swipeable>(null);
-  const icon = TYPE_ICON[item.type] ?? DEFAULT_ICON;
-  const { title, message } = formatNotificationContent(item, t);
+  const content: FormattedNotification = formatNotificationContent(item, t, {
+    isVendor,
+    orderStatus,
+  });
+  const icon = TYPE_ICON[content.type] ?? DEFAULT_ICON;
 
   const handleDelete = () => {
     swipeRef.current?.close();
@@ -173,14 +242,21 @@ function NotificationRow({ item, onTap, onDelete }: NotificationRowProps) {
 
         {/* Content */}
         <View className="flex-1">
+          {isVendor && content.badgeLabel != null && (
+            <NotificationBadge
+              label={content.badgeLabel}
+              kind={content.badgeKind}
+              orderStatus={content.orderStatus}
+            />
+          )}
           <Text
             className={`text-sm text-text-primary mb-0.5 ${item.isRead ? 'font-medium' : 'font-semibold'}`}
             numberOfLines={1}
           >
-            {title}
+            {content.title}
           </Text>
           <Text className="text-xs text-text-secondary leading-4" numberOfLines={2}>
-            {message}
+            {content.message}
           </Text>
           <Text className="text-xs text-text-secondary mt-1">
             {formatRelativeTime(item.createdAt, t)}
@@ -201,7 +277,7 @@ function NotificationRow({ item, onTap, onDelete }: NotificationRowProps) {
 function EmptyState() {
   const { t } = useTranslation();
   return (
-    <View className="flex-1 items-center justify-center px-8 py-16">
+    <View className="flex-1 items-center justify-center px-8">
       <Ionicons name="notifications-outline" size={56} color={colors.primary[200]} />
       <Text className="text-base font-semibold text-text-primary text-center mt-4 mb-2">
         {t('notifications.empty')}
@@ -229,6 +305,10 @@ export default function NotificationScreen() {
 
   const routeToNotification = useNotificationNavigation();
   const safeNotifications = Array.isArray(notifications) ? notifications : [];
+  const isVendor = useAuthStore(
+    (s) => s.user?.role === 'VENDOR' || s.user?.role === 'VENDOR_ADMIN',
+  );
+  const { statusByOrderId } = useNotificationOrderStatuses(safeNotifications, isVendor);
 
   // Load on focus
   useFocusEffect(
@@ -272,12 +352,12 @@ export default function NotificationScreen() {
     <View className="flex-1 bg-background">
       {/* Header */}
       <View
-        className="flex-row items-center px-4 pb-3 bg-surface border-b border-border"
+        className="flex-row items-center px-4 pb-3 bg-background border-b border-border"
         style={{ paddingTop: insets.top + 12 }}
       >
         <BackButton onPress={() => navigation.goBack()} />
 
-        <Text className="flex-1 text-xl font-bold text-text-primary mx-3">
+        <Text className="flex-1 text-xl font-bold text-primary mx-3">
           {t('notifications.title')}
         </Text>
 
@@ -313,9 +393,19 @@ export default function NotificationScreen() {
         <FlatList
           data={safeNotifications}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <NotificationRow item={item} onTap={handleTap} onDelete={handleDelete} />
-          )}
+          renderItem={({ item }) => {
+            const orderId = getNotificationOrderId(item);
+            const orderStatus = orderId != null ? statusByOrderId[orderId] : undefined;
+            return (
+              <NotificationRow
+                item={item}
+                isVendor={isVendor}
+                orderStatus={orderStatus}
+                onTap={handleTap}
+                onDelete={handleDelete}
+              />
+            );
+          }}
           ListEmptyComponent={<EmptyState />}
           refreshControl={
             <RefreshControl

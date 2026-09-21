@@ -1,3 +1,5 @@
+const plugin = require('tailwindcss/plugin');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./App.tsx', './src/**/*.{js,jsx,ts,tsx}'],
@@ -6,17 +8,17 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#2C5F2E',
-          50:  '#EAF2EA',
-          100: '#C9E0CA',
-          200: '#A3C9A5',
-          300: '#7DB280',
-          400: '#5E9B61',
-          500: '#2C5F2E',
-          600: '#245226',
-          700: '#1C431E',
-          800: '#143316',
-          900: '#0B220C',
+          DEFAULT: '#2E5A27',
+          50:  '#EEF4EC',
+          100: '#D4E4D0',
+          200: '#A8C8A0',
+          300: '#7AAB72',
+          400: '#528548',
+          500: '#2E5A27',
+          600: '#1F3D1B',
+          700: '#183016',
+          800: '#112410',
+          900: '#0A160A',
         },
         accent: {
           DEFAULT: '#B8D94A',
@@ -31,20 +33,22 @@ module.exports = {
           800: '#4D5C18',
           900: '#303A0F',
         },
-        background: '#F4F4F2',
+        background: '#FAF7F1',
+        chrome: '#F5F0E6',
         surface: '#FFFFFF',
-        'text-primary': '#1A1A1A',
-        'text-secondary': '#757575',
+        'text-primary': '#1A2418',
+        'text-secondary': '#5C6B58',
         'text-inverse': '#FFFFFF',
-        error: '#E53935',
-        success: '#2C5F2E',
-        warning: '#F5A623',
-        border: '#E5E5E5',
-        rating: '#F5A623',
-        favorite: '#E53935',
+        error: '#C25B52',
+        success: '#2E5A27',
+        warning: '#E8671A',
+        border: '#E4DFD2',
+        rating: '#E8671A',
+        favorite: '#C25B52',
       },
       fontFamily: {
-        sans: ['System'],
+        sans: ['Figtree_400Regular'],
+        display: ['BricolageGrotesque_700Bold'],
       },
       borderRadius: {
         card: '12px',
@@ -52,5 +56,17 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // RN needs a dedicated TTF per weight — do not rely on fontWeight with Figtree.
+    plugin(({ addUtilities }) => {
+      addUtilities({
+        '.font-normal': { fontFamily: 'Figtree_400Regular' },
+        '.font-medium': { fontFamily: 'Figtree_500Medium' },
+        '.font-semibold': { fontFamily: 'Figtree_600SemiBold' },
+        '.font-bold': { fontFamily: 'Figtree_700Bold' },
+        '.font-extrabold': { fontFamily: 'Figtree_800ExtraBold' },
+        '.font-display': { fontFamily: 'BricolageGrotesque_700Bold' },
+      });
+    }),
+  ],
 };

@@ -35,3 +35,10 @@ export function orderStatusColor(status: OrderStatus): string {
 export function isActiveOrderStatus(status: OrderStatus): boolean {
   return status === 'CONFIRMED' || status === 'PROCESSING' || status === 'READY';
 }
+
+const TERMINAL_ORDER_STATUSES: OrderStatus[] = ['COMPLETED', 'CANCELLED', 'EXPIRED'];
+
+/** Vendor may reject/cancel any order that is not already finished. */
+export function canRejectOrder(status: OrderStatus): boolean {
+  return !TERMINAL_ORDER_STATUSES.includes(status);
+}

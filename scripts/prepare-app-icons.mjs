@@ -8,7 +8,7 @@ import sharp from 'sharp';
 const ASSETS_DIR = path.resolve('assets');
 const BRAND_GREEN = '#2C5F2E';
 const CANVAS_SIZE = 1024;
-const FOREGROUND_SIZE = 676;
+const FOREGROUND_SIZE = 666;
 
 const SOURCE_ICON = path.join(ASSETS_DIR, 'auth-icon.png');
 const OUTPUTS = {

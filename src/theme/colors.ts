@@ -1,20 +1,23 @@
 // Mirrors tailwind.config.js color tokens for programmatic use
 // (react-native-maps markers, React Navigation theme, chart labels, etc.)
 // Do NOT hardcode hex values in component files — import from here or use Tailwind classes.
+//
+// Palette follows the Još Sveže landing page (https://jossveze.rs/):
+// cream canvas, forest green, ink text.
 
 export const colors = {
   primary: {
-    DEFAULT: '#2C5F2E',
-    50:  '#EAF2EA',
-    100: '#C9E0CA',
-    200: '#A3C9A5',
-    300: '#7DB280',
-    400: '#5E9B61',
-    500: '#2C5F2E',
-    600: '#245226',
-    700: '#1C431E',
-    800: '#143316',
-    900: '#0B220C',
+    DEFAULT: '#2E5A27',
+    50:  '#EEF4EC',
+    100: '#D4E4D0',
+    200: '#A8C8A0',
+    300: '#7AAB72',
+    400: '#528548',
+    500: '#2E5A27',
+    600: '#1F3D1B',
+    700: '#183016',
+    800: '#112410',
+    900: '#0A160A',
   },
   accent: {
     DEFAULT: '#B8D94A',
@@ -29,17 +32,21 @@ export const colors = {
     800: '#4D5C18',
     900: '#303A0F',
   },
-  background: '#F4F4F2',
+  /** Screen canvas — landing cream-soft */
+  background: '#FAF7F1',
+  /** Headers, tab bar — landing cream */
+  chrome: '#F5F0E6',
+  /** Cards, sheets, inputs */
   surface: '#FFFFFF',
   text: {
-    primary: '#1A1A1A',
-    secondary: '#757575',
+    primary: '#1A2418',
+    secondary: '#5C6B58',
     inverse: '#FFFFFF',
   },
-  error: '#E53935',
-  success: '#2C5F2E',
-  warning: '#F5A623',
-  border: '#E5E5E5',
-  rating: '#F5A623',
-  favorite: '#E53935',
+  error: '#C25B52',
+  success: '#2E5A27',
+  warning: '#E8671A',
+  border: '#E4DFD2',
+  rating: '#E8671A',
+  favorite: '#C25B52',
 } as const;

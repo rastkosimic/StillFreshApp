@@ -68,6 +68,15 @@
 | List row icon | 20px |
 | Tab bar icon | ~22–26px |
 
+## Typography
+
+| Role | Font | Class / token |
+|------|------|----------------|
+| Wordmark **Još Sveže** only | Bricolage Grotesque 700 | `font-display` / `fonts.display` |
+| All other UI | Figtree 400–800 | `font-normal` … `font-extrabold` / `fonts.ui.*` |
+
+Do not use Bricolage on screen titles, cards, tabs, or buttons. Source: `src/theme/typography.ts`.
+
 ## Shadow recipe (copy-paste for style prop)
 
 ```ts

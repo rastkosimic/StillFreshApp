@@ -1,29 +1,49 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import SimpleSlider from '@/components/SimpleSlider';
+import AuthImage from '@/components/AuthImage';
 import MapView, {
-  Callout,
   Marker,
   PROVIDER_GOOGLE,
   Region,
 } from 'react-native-maps';
 
+import { CustomerStackScreenProps } from '@/navigation/types';
 import { searchNearby } from '@/services/offerService';
 import { useLocationStore } from '@/stores/locationStore';
 import { useOffersRefreshStore } from '@/stores/offersRefreshStore';
 import { colors } from '@/theme/colors';
 import { Offer } from '@/types';
+import { clusterMapItems, regionForCluster } from '@/utils/clusterMapItems';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatPickupWindow } from '@/utils/formatDate';
+import {
+  clampMapRangeKm,
+  isViewportCoveredBySearch,
+  MAX_MAP_RANGE_KM,
+  MIN_MAP_RANGE_KM,
+  regionFromRadiusKm,
+  regionRadiusKm,
+  viewportSearchFromRegion,
+  type ViewportSearch,
+} from '@/utils/mapViewport';
 import { navigateToVendor } from '@/utils/navigation';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const BELGRADE = { latitude: 44.7866, longitude: 20.4489 };
 const INITIAL_DELTA = { latitudeDelta: 0.06, longitudeDelta: 0.06 };
+const CLUSTER_RADIUS_PX = 52;
+const AVATAR_SIZE = 44;
+const MARKER_ANCHOR = { x: 0.5, y: 0.5 };
+const FETCH_DEBOUNCE_MS = 400;
+const RANGE_SLIDER_MARKS = [1, 20, 50, 100, 200];
+const INITIAL_VISIBLE_RANGE_KM = Math.round(
+  clampMapRangeKm(regionRadiusKm({ ...BELGRADE, ...INITIAL_DELTA })),
+);
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -36,6 +56,7 @@ interface OfferRow {
   pickupStartTime?: string;
   pickupEndTime?: string;
   greyedOut: boolean;
+  imageUrl?: string;
 }
 
 interface VendorGroup {
@@ -45,6 +66,7 @@ interface VendorGroup {
   latitude: number;
   longitude: number;
   totalBags: number;
+  vendorImageUrl?: string;
   offers: OfferRow[];
   allGreyedOut: boolean;
 }
@@ -66,12 +88,16 @@ function groupByVendor(
       pickupStartTime: o.pickupStartTime,
       pickupEndTime: o.pickupEndTime,
       greyedOut: o.greyedOut ?? false,
+      imageUrl: o.imageUrl,
     };
 
     const existing = groups.get(o.vendorId);
     if (existing) {
       existing.totalBags += o.quantityAvailable;
       if (!row.greyedOut) existing.allGreyedOut = false;
+      if (!existing.vendorImageUrl && o.vendorImageUrl) {
+        existing.vendorImageUrl = o.vendorImageUrl;
+      }
       existing.offers.push(row);
     } else {
       groups.set(o.vendorId, {
@@ -81,6 +107,7 @@ function groupByVendor(
         latitude: o.latitude,
         longitude: o.longitude,
         totalBags: o.quantityAvailable,
+        vendorImageUrl: o.vendorImageUrl,
         offers: [row],
         allGreyedOut: row.greyedOut,
       });
@@ -95,150 +122,235 @@ function fmtPrice(amount: number, currency: string): string {
   return formatCurrency(Math.round(amount * 100), currency);
 }
 
-// ── VendorPin ─────────────────────────────────────────────────────────────────
+// ── ClusterPin / VendorAvatarPin ──────────────────────────────────────────────
 
-interface VendorPinProps {
-  totalBags: number;
+interface ClusterPinProps {
+  count: number;
   isGreyedOut: boolean;
 }
 
-function VendorPin({ totalBags, isGreyedOut }: VendorPinProps) {
+function ClusterPin({ count, isGreyedOut }: ClusterPinProps) {
+  const size = count >= 10 ? 52 : count >= 5 ? 48 : 44;
   const bg = isGreyedOut ? colors.text.secondary : colors.primary.DEFAULT;
   return (
-    <View style={{ alignItems: 'center' }}>
-      <View
+    <View
+      collapsable={false}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: bg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: colors.surface,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+        elevation: 4,
+      }}
+    >
+      <Text
         style={{
-          backgroundColor: bg,
-          borderRadius: 20,
-          minWidth: 36,
-          height: 36,
-          paddingHorizontal: 8,
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3,
-          elevation: 4,
-          borderWidth: 2,
-          borderColor: '#fff',
+          color: colors.text.inverse,
+          fontWeight: '800',
+          fontSize: count >= 100 ? 13 : 16,
         }}
       >
-        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{totalBags}</Text>
-      </View>
-      <View
-        style={{
-          width: 0,
-          height: 0,
-          borderLeftWidth: 6,
-          borderRightWidth: 6,
-          borderTopWidth: 8,
-          borderLeftColor: 'transparent',
-          borderRightColor: 'transparent',
-          borderTopColor: bg,
-          marginTop: -1,
-        }}
+        {count}
+      </Text>
+    </View>
+  );
+}
+
+interface VendorAvatarPinProps {
+  imageUrl?: string;
+  isGreyedOut: boolean;
+}
+
+function VendorAvatarPin({ imageUrl, isGreyedOut }: VendorAvatarPinProps) {
+  return (
+    <View
+      collapsable={false}
+      style={{
+        width: AVATAR_SIZE,
+        height: AVATAR_SIZE,
+        borderRadius: AVATAR_SIZE / 2,
+        borderWidth: 3,
+        borderColor: colors.surface,
+        backgroundColor: colors.primary[100],
+        overflow: 'hidden',
+        opacity: isGreyedOut ? 0.5 : 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.22,
+        shadowRadius: 3,
+        elevation: 4,
+      }}
+    >
+      <AuthImage
+        uri={imageUrl}
+        style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2 }}
+        contentFit="cover"
+        fallback={
+          <View
+            style={{
+              width: AVATAR_SIZE,
+              height: AVATAR_SIZE,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.primary[100],
+            }}
+          >
+            <Ionicons name="storefront-outline" size={22} color={colors.primary[400]} />
+          </View>
+        }
       />
     </View>
   );
 }
 
-// ── VendorCallout ─────────────────────────────────────────────────────────────
-
-interface VendorCalloutProps {
+function VendorAvatarMarker({
+  group,
+  onPress,
+}: {
   group: VendorGroup;
-  onNavigate: () => void;
+  onPress: () => void;
+}) {
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
+
+  useEffect(() => {
+    const delay = group.vendorImageUrl ? 1500 : 80;
+    const timer = setTimeout(() => setTracksViewChanges(false), delay);
+    return () => clearTimeout(timer);
+  }, [group.vendorImageUrl]);
+
+  return (
+    <Marker
+      identifier={`vendor-${group.vendorId}`}
+      coordinate={{ latitude: group.latitude, longitude: group.longitude }}
+      anchor={MARKER_ANCHOR}
+      tracksViewChanges={Platform.OS === 'android' ? true : tracksViewChanges}
+      onPress={() => onPress()}
+    >
+      <VendorAvatarPin imageUrl={group.vendorImageUrl} isGreyedOut={group.allGreyedOut} />
+    </Marker>
+  );
 }
 
-function VendorCallout({ group, onNavigate }: VendorCalloutProps) {
+// ── VendorPreviewCard (overlay, not a native Callout — those swallow taps) ───
+
+interface VendorPreviewCardProps {
+  group: VendorGroup;
+  onNavigate: () => void;
+  onOfferPress: (offerId: number) => void;
+}
+
+function VendorPreviewCard({ group, onNavigate, onOfferPress }: VendorPreviewCardProps) {
+  const { t } = useTranslation();
   return (
     <View
+      className="bg-surface rounded-2xl overflow-hidden border border-border"
       style={{
-        backgroundColor: colors.surface,
-        borderRadius: 12,
-        padding: 12,
-        minWidth: 240,
-        maxWidth: 300,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 4,
-        borderWidth: 1,
-        borderColor: colors.border,
+        shadowRadius: 8,
+        elevation: 6,
       }}
     >
-      {/* Vendor header */}
-      <Text
-        style={{ fontWeight: '700', fontSize: 15, color: colors.text.primary, marginBottom: 2 }}
-        numberOfLines={1}
-      >
-        {group.displayName}
-      </Text>
-      <Text
-        style={{ fontSize: 12, color: colors.text.secondary, marginBottom: 10 }}
-        numberOfLines={2}
-      >
-        {group.address}
-      </Text>
+      <View className="px-4 pt-4 pb-3">
+        <Text className="font-bold text-base text-text-primary" numberOfLines={1}>
+          {group.displayName}
+        </Text>
+        <Text className="text-xs text-text-secondary mt-0.5" numberOfLines={2}>
+          {group.address}
+        </Text>
+      </View>
 
-      {/* One row per offer */}
-      {group.offers.map((offer, idx) => (
-        <View key={offer.id} style={{ opacity: offer.greyedOut ? 0.45 : 1 }}>
-          {idx > 0 && (
-            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 8 }} />
-          )}
-          <Text
-            style={{ fontSize: 13, fontWeight: '600', color: colors.text.primary, marginBottom: 3 }}
-            numberOfLines={1}
+      <ScrollView
+        className="px-3"
+        style={{ maxHeight: 220 }}
+        nestedScrollEnabled
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <View className="pb-3" style={{ gap: 8 }}>
+          {group.offers.map((offer) => (
+          <TouchableOpacity
+            key={offer.id}
+            activeOpacity={offer.greyedOut ? 1 : 0.85}
+            disabled={offer.greyedOut}
+            onPress={() => onOfferPress(offer.id)}
+            className="rounded-xl overflow-hidden"
+            style={{ height: 96, opacity: offer.greyedOut ? 0.5 : 1 }}
           >
-            {offer.name}
-          </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ fontSize: 12, color: colors.text.secondary }}>
-              {offer.pickupStartTime && offer.pickupEndTime
-                ? formatPickupWindow(offer.pickupStartTime, offer.pickupEndTime)
-                : ''}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={{ fontSize: 12, color: colors.text.secondary }}>
-                {offer.quantityAvailable} bags
-              </Text>
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: '700',
-                  color: offer.greyedOut ? colors.text.secondary : colors.primary.DEFAULT,
-                }}
-              >
-                {fmtPrice(offer.price, offer.currency)}
-              </Text>
+            <View className="absolute inset-0 bg-primary-100">
+              <AuthImage
+                uri={offer.imageUrl}
+                style={{ width: '100%', height: 96 }}
+                contentFit="cover"
+                fallback={
+                  <View className="flex-1 items-center justify-center bg-primary-100">
+                    <Ionicons name="bag-handle-outline" size={28} color={colors.primary[400]} />
+                  </View>
+                }
+              />
+              <View
+                className="absolute inset-0"
+                style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+              />
             </View>
-          </View>
-        </View>
-      ))}
 
-      {/* Get directions — vendor location is the same for all offers */}
-      <TouchableOpacity
-        style={{
-          backgroundColor: colors.primary.DEFAULT,
-          borderRadius: 8,
-          paddingVertical: 8,
-          alignItems: 'center',
-          marginTop: 12,
-        }}
-        onPress={onNavigate}
-        activeOpacity={0.8}
-      >
-        <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Get Directions</Text>
-      </TouchableOpacity>
+            <View className="flex-1 justify-end px-3 py-2.5">
+              <Text className="text-white font-bold text-sm" numberOfLines={1}>
+                {offer.name}
+              </Text>
+              <View className="flex-row justify-between items-center mt-1">
+                <Text className="text-white text-xs">
+                  {offer.pickupStartTime && offer.pickupEndTime
+                    ? formatPickupWindow(offer.pickupStartTime, offer.pickupEndTime)
+                    : ''}
+                </Text>
+                <View className="flex-row items-center" style={{ gap: 8 }}>
+                  <Text className="text-white text-xs">
+                    {offer.quantityAvailable} {t('customer.left')}
+                  </Text>
+                  <Text
+                    className="text-sm font-extrabold"
+                    style={{
+                      color: offer.greyedOut ? colors.text.inverse : colors.accent.DEFAULT,
+                    }}
+                  >
+                    {fmtPrice(offer.price, offer.currency)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+
+      <View className="px-3 pb-3">
+        <TouchableOpacity
+          className="bg-primary rounded-xl py-3 items-center"
+          onPress={onNavigate}
+          activeOpacity={0.8}
+        >
+          <Text className="text-white font-semibold text-base">
+            {t('customer.getDirections')}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 
-export default function VendorMapScreen() {
+export default function VendorMapScreen({ navigation }: CustomerStackScreenProps<'VendorMap'>) {
   const { t } = useTranslation();
   const { coordinates, requestPermission, getLocation } = useLocationStore();
   const mapRef = useRef<MapView>(null);
@@ -247,13 +359,29 @@ export default function VendorMapScreen() {
   const [vendorGroups, setVendorGroups] = useState<VendorGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [locationReady, setLocationReady] = useState(false);
-  const [range, setRange] = useState(20);
-  const [sliderValue, setSliderValue] = useState(20);
+  const [sliderValue, setSliderValue] = useState(INITIAL_VISIBLE_RANGE_KM);
   const [rangeOpen, setRangeOpen] = useState(false);
+  const [visibleRangeKm, setVisibleRangeKm] = useState(INITIAL_VISIBLE_RANGE_KM);
+  const [selectedVendor, setSelectedVendor] = useState<VendorGroup | null>(null);
+  const ignoreNextMapPressRef = useRef(false);
+  const rangeOpenRef = useRef(false);
+  rangeOpenRef.current = rangeOpen;
+  const [mapSize, setMapSize] = useState({
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+  });
+  const centre = coordinates ?? BELGRADE;
+  const [clusterRegion, setClusterRegion] = useState<Region>({
+    ...centre,
+    ...INITIAL_DELTA,
+  });
+  const regionRef = useRef<Region>({ ...centre, ...INITIAL_DELTA });
+  const lastSearchRef = useRef<ViewportSearch | null>(null);
+  const fetchIdRef = useRef(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clusterFrameRef = useRef<number | null>(null);
   const revision = useOffersRefreshStore((state) => state.revision);
   const clearReservations = useOffersRefreshStore((state) => state.clearReservations);
-
-  const centre = coordinates ?? BELGRADE;
 
   useEffect(() => {
     const init = async () => {
@@ -267,49 +395,167 @@ export default function VendorMapScreen() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchOffers = useCallback(
-    async (silent = false) => {
+    async (search: ViewportSearch, silent: boolean) => {
       if (!locationReady) return;
 
+      const last = lastSearchRef.current;
+      if (last && isViewportCoveredBySearch(search, last)) return;
+
+      const requestId = ++fetchIdRef.current;
       if (!silent) setIsLoading(true);
       try {
         const { offers } = await searchNearby({
-          latitude: centre.latitude,
-          longitude: centre.longitude,
-          range,
+          latitude: search.latitude,
+          longitude: search.longitude,
+          range: search.range,
           sort: 'distance',
         });
+        if (requestId !== fetchIdRef.current) return;
+        lastSearchRef.current = search;
         const withCoords = offers.filter(
           (o): o is Offer & { latitude: number; longitude: number } =>
             o.latitude != null && o.longitude != null,
         );
-        setVendorGroups(groupByVendor(withCoords));
+        const groups = groupByVendor(withCoords);
+        setVendorGroups(groups);
+        setSelectedVendor((prev) => {
+          if (!prev) return null;
+          return groups.find((g) => g.vendorId === prev.vendorId) ?? null;
+        });
         clearReservations();
       } catch {
         // Non-fatal: user sees the map, just no pins
       } finally {
-        if (!silent) setIsLoading(false);
+        if (requestId === fetchIdRef.current && !silent) setIsLoading(false);
       }
     },
-    [locationReady, centre.latitude, centre.longitude, range, clearReservations],
+    [locationReady, clearReservations],
+  );
+
+  const requestFetchForRegion = useCallback(
+    (region: Region, immediate = false, silent?: boolean) => {
+      const search = viewportSearchFromRegion(region);
+      const run = () => {
+        const useSilent = silent ?? (lastSearchRef.current !== null && !immediate);
+        void fetchOffers(search, useSilent);
+      };
+
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+
+      if (immediate) {
+        run();
+        return;
+      }
+
+      debounceRef.current = setTimeout(run, FETCH_DEBOUNCE_MS);
+    },
+    [fetchOffers],
   );
 
   useEffect(() => {
-    void fetchOffers();
-  }, [fetchOffers]);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (clusterFrameRef.current != null) cancelAnimationFrame(clusterFrameRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!locationReady) return;
+    requestFetchForRegion(regionRef.current, true);
+  }, [locationReady, requestFetchForRegion]);
 
   useEffect(() => {
     if (revision === 0) return;
-    void fetchOffers(true);
-  }, [revision, fetchOffers]);
+    lastSearchRef.current = null;
+    requestFetchForRegion(regionRef.current, true, true);
+  }, [revision, requestFetchForRegion]);
 
   useEffect(() => {
     if (coordinates && mapRef.current) {
-      mapRef.current.animateToRegion({ ...coordinates, ...INITIAL_DELTA }, 600);
+      const next: Region = { ...coordinates, ...INITIAL_DELTA };
+      regionRef.current = next;
+      setClusterRegion(next);
+      mapRef.current.animateToRegion(next, 600);
     }
   }, [coordinates]);
 
   const handleNavigate = useCallback((group: VendorGroup) => {
-    navigateToVendor(group.latitude, group.longitude, group.displayName);
+    void navigateToVendor(group.latitude, group.longitude, group.displayName);
+  }, []);
+
+  const selectVendor = useCallback((group: VendorGroup) => {
+    ignoreNextMapPressRef.current = true;
+    setRangeOpen(false);
+    setSelectedVendor(group);
+  }, []);
+
+  const handleMapPress = useCallback(() => {
+    if (ignoreNextMapPressRef.current) {
+      ignoreNextMapPressRef.current = false;
+      return;
+    }
+    setSelectedVendor(null);
+  }, []);
+
+  const syncVisibleRange = useCallback((region: Region) => {
+    const km = Math.round(clampMapRangeKm(regionRadiusKm(region)));
+    setVisibleRangeKm(km);
+    if (!rangeOpenRef.current) {
+      setSliderValue((prev) => (prev === km ? prev : km));
+    }
+  }, []);
+
+  const updateClusterRegion = useCallback((next: Region, force = false) => {
+    setClusterRegion((prev) => {
+      if (force) return next;
+      if (prev.latitudeDelta <= 0 || prev.longitudeDelta <= 0) return next;
+      const latZoom =
+        Math.abs(prev.latitudeDelta - next.latitudeDelta) / prev.latitudeDelta;
+      const lngZoom =
+        Math.abs(prev.longitudeDelta - next.longitudeDelta) / prev.longitudeDelta;
+      if (latZoom < 0.008 && lngZoom < 0.008) return prev;
+      return next;
+    });
+  }, []);
+
+  const handleRegionChange = useCallback((next: Region) => {
+    regionRef.current = next;
+    if (clusterFrameRef.current != null) return;
+    clusterFrameRef.current = requestAnimationFrame(() => {
+      clusterFrameRef.current = null;
+      updateClusterRegion(regionRef.current);
+    });
+  }, [updateClusterRegion]);
+
+  const handleRegionChangeComplete = useCallback((next: Region) => {
+    regionRef.current = next;
+    syncVisibleRange(next);
+    requestFetchForRegion(next);
+    updateClusterRegion(next, true);
+  }, [requestFetchForRegion, syncVisibleRange, updateClusterRegion]);
+
+  const clusteredMarkers = useMemo(
+    () =>
+      clusterMapItems(
+        vendorGroups,
+        clusterRegion,
+        mapSize,
+        CLUSTER_RADIUS_PX,
+        (group) => group.vendorId,
+      ),
+    [vendorGroups, clusterRegion, mapSize],
+  );
+
+  const handleClusterPress = useCallback((items: VendorGroup[]) => {
+    ignoreNextMapPressRef.current = true;
+    setSelectedVendor(null);
+    const next = regionForCluster(items, regionRef.current);
+    regionRef.current = next;
+    setClusterRegion(next);
+    mapRef.current?.animateToRegion(next, 350);
   }, []);
 
   const initialRegion: Region = { ...centre, ...INITIAL_DELTA };
@@ -323,19 +569,46 @@ export default function VendorMapScreen() {
         initialRegion={initialRegion}
         showsUserLocation
         showsMyLocationButton
+        toolbarEnabled={false}
+        moveOnMarkerPress={false}
+        onPress={handleMapPress}
+        onLayout={(event) => {
+          const { width, height } = event.nativeEvent.layout;
+          if (width > 0 && height > 0) {
+            setMapSize((prev) =>
+              prev.width === width && prev.height === height ? prev : { width, height },
+            );
+          }
+        }}
+        onRegionChange={handleRegionChange}
+        onRegionChangeComplete={handleRegionChangeComplete}
       >
-        {vendorGroups.map((group) => (
-          <Marker
-            key={String(group.vendorId)}
-            coordinate={{ latitude: group.latitude, longitude: group.longitude }}
-            tracksViewChanges={false}
-          >
-            <VendorPin totalBags={group.totalBags} isGreyedOut={group.allGreyedOut} />
-            <Callout tooltip>
-              <VendorCallout group={group} onNavigate={() => handleNavigate(group)} />
-            </Callout>
-          </Marker>
-        ))}
+        {clusteredMarkers.map((marker) => {
+          if (marker.type === 'cluster') {
+            const count = marker.items.reduce((sum, group) => sum + group.totalBags, 0);
+            const isGreyedOut = marker.items.every((group) => group.allGreyedOut);
+            return (
+              <Marker
+                key={marker.id}
+                identifier={marker.id}
+                coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
+                anchor={MARKER_ANCHOR}
+                tracksViewChanges={true}
+                onPress={() => handleClusterPress(marker.items)}
+              >
+                <ClusterPin count={count} isGreyedOut={isGreyedOut} />
+              </Marker>
+            );
+          }
+
+          return (
+            <VendorAvatarMarker
+              key={marker.id}
+              group={marker.item}
+              onPress={() => selectVendor(marker.item)}
+            />
+          );
+        })}
       </MapView>
 
       {/* Range chip + slider panel — floats below the status bar */}
@@ -370,7 +643,7 @@ export default function VendorMapScreen() {
               color={rangeOpen ? '#fff' : colors.primary.DEFAULT}
             />
             <Text style={{ fontSize: 13, fontWeight: '600', color: rangeOpen ? '#fff' : colors.text.primary }}>
-              {range} km
+              {rangeOpen ? Math.round(sliderValue) : visibleRangeKm} km
             </Text>
             <Ionicons
               name={rangeOpen ? 'chevron-up' : 'chevron-down'}
@@ -403,14 +676,22 @@ export default function VendorMapScreen() {
 
             <SimpleSlider
               value={sliderValue}
-              min={1}
-              max={50}
+              min={MIN_MAP_RANGE_KM}
+              max={MAX_MAP_RANGE_KM}
               step={1}
               onValueChange={(v) => setSliderValue(v)}
               onSlidingComplete={(v) => {
-                setSliderValue(v);
-                setRange(v);
+                const km = clampMapRangeKm(v);
+                setSliderValue(km);
+                setVisibleRangeKm(Math.round(km));
                 setRangeOpen(false);
+                const aspect = mapSize.width > 0 && mapSize.height > 0
+                  ? mapSize.width / mapSize.height
+                  : 1;
+                const next = regionFromRadiusKm(regionRef.current, km, aspect);
+                regionRef.current = next;
+                setClusterRegion(next);
+                mapRef.current?.animateToRegion(next, 400);
               }}
               thumbColor={colors.primary.DEFAULT}
               minimumTrackColor={colors.primary.DEFAULT}
@@ -418,7 +699,7 @@ export default function VendorMapScreen() {
             />
 
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
-              {[1, 10, 20, 30, 50].map((mark) => (
+              {RANGE_SLIDER_MARKS.map((mark) => (
                 <Text key={mark} style={{ fontSize: 10, color: colors.text.secondary }}>
                   {mark} km
                 </Text>
@@ -427,6 +708,24 @@ export default function VendorMapScreen() {
           </View>
         )}
       </View>
+
+      {selectedVendor && (
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            left: 16,
+            right: 16,
+            bottom: Math.max(insets.bottom, 12) + 8,
+          }}
+        >
+          <VendorPreviewCard
+            group={selectedVendor}
+            onNavigate={() => handleNavigate(selectedVendor)}
+            onOfferPress={(offerId) => navigation.navigate('OfferDetails', { offerId })}
+          />
+        </View>
+      )}
 
       {isLoading && (
         <View
@@ -449,11 +748,13 @@ export default function VendorMapScreen() {
           }}
         >
           <ActivityIndicator size="small" color={colors.primary.DEFAULT} />
-          <Text style={{ color: colors.text.primary, fontSize: 13 }}>Finding offers...</Text>
+          <Text style={{ color: colors.text.primary, fontSize: 13 }}>
+            {t('customer.findingOffers')}
+          </Text>
         </View>
       )}
 
-      {!isLoading && vendorGroups.length === 0 && (
+      {!isLoading && vendorGroups.length === 0 && !selectedVendor && (
         <View
           style={{
             position: 'absolute',
@@ -471,7 +772,7 @@ export default function VendorMapScreen() {
           }}
         >
           <Text style={{ color: colors.text.secondary, fontSize: 14 }}>
-            No offers nearby right now
+            {t('customer.noOffersNearby')}
           </Text>
         </View>
       )}

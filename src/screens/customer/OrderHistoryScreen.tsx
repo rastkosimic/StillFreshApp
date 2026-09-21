@@ -53,7 +53,7 @@ export default function OrderHistoryScreen({ navigation }: Props) {
     <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <View className="flex-row items-center px-4 py-3 gap-3">
         <BackButton onPress={() => navigation.goBack()} />
-        <Text className="text-lg font-bold text-text-primary flex-1">
+        <Text className="text-lg font-bold text-primary flex-1">
           {t('customer.orderHistory')}
         </Text>
       </View>
@@ -92,8 +92,11 @@ export default function OrderHistoryScreen({ navigation }: Props) {
           data={orders}
           keyExtractor={(item) => String(item.id)}
           extraData={activeTab}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingHorizontal: 16,
+            paddingTop: 4,
             paddingBottom: insets.bottom + 16,
             flexGrow: orders.length === 0 ? 1 : undefined,
           }}
@@ -109,7 +112,7 @@ export default function OrderHistoryScreen({ navigation }: Props) {
           }}
           onEndReachedThreshold={0.3}
           ListEmptyComponent={
-            <View className="flex-1 items-center justify-center py-16">
+            <View className="flex-1 items-center justify-center">
               <Ionicons name="receipt-outline" size={56} color={colors.primary[200]} />
               <Text className="text-base font-semibold text-text-primary text-center mt-4">
                 {t('customer.noOrderHistory')}

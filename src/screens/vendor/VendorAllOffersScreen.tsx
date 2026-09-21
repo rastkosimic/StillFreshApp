@@ -13,13 +13,16 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { VendorTabScreenProps } from '@/navigation/types';
 import { getAllOffers, invalidateOffer } from '@/services/vendorService';
 import { useAuthStore } from '@/stores/authStore';
 import { colors } from '@/theme/colors';
+import { fonts } from '@/theme/typography';
 import { Offer, OfferStatus } from '@/types';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatPickupWindow } from '@/utils/formatDate';
 
 type Props = VendorTabScreenProps<'VendorOffers'>;
 
@@ -41,6 +44,7 @@ function resolveStatus(offer: Offer): OfferStatus {
 
 export default function VendorAllOffersScreen({ navigation }: Props) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -138,23 +142,21 @@ export default function VendorAllOffersScreen({ navigation }: Props) {
       {/* Header */}
       <View
         style={{
-          backgroundColor: colors.surface,
-          paddingTop: 56,
+          backgroundColor: colors.background,
+          paddingTop: insets.top + 12,
           paddingHorizontal: 20,
           paddingBottom: 10,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
         }}
       >
         <View
           style={{
             flexDirection: 'row',
             alignItems: 'flex-end',
-            justifyContent: 'space-between',
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontSize: 28, fontWeight: '700', color: colors.text.primary }}>
+          <View style={{ width: 32 }} />
+          <Text style={{ flex: 1, fontSize: 28, fontFamily: fonts.ui.bold, color: colors.primary.DEFAULT, textAlign: 'center' }}>
             {t('vendor.allOffers')}
           </Text>
           <TouchableOpacity
@@ -210,7 +212,8 @@ export default function VendorAllOffersScreen({ navigation }: Props) {
       <FlatList
         data={filtered}
         keyExtractor={(item) => String(item.id)}
-        style={{ backgroundColor: colors.surface }}
+        style={{ backgroundColor: colors.background }}
+        contentContainerStyle={{ flexGrow: filtered.length === 0 ? 1 : undefined }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -221,9 +224,9 @@ export default function VendorAllOffersScreen({ navigation }: Props) {
         ListEmptyComponent={
           <View
             style={{
+              flex: 1,
               alignItems: 'center',
               justifyContent: 'center',
-              paddingVertical: 80,
               paddingHorizontal: 24,
             }}
           >
@@ -308,7 +311,7 @@ function OfferRow({
         gap: 12,
         backgroundColor: colors.surface,
         borderBottomWidth: isLast ? 0 : 1,
-        borderBottomColor: '#F2F2F7',
+        borderBottomColor: colors.border,
         opacity: isGreyed ? 0.55 : 1,
       }}
     >
@@ -325,7 +328,7 @@ function OfferRow({
             width: 46,
             height: 46,
             borderRadius: 10,
-            backgroundColor: '#F2F2F7',
+            backgroundColor: colors.background,
             alignItems: 'center',
             justifyContent: 'center',
           }}
@@ -343,9 +346,11 @@ function OfferRow({
           {offer.name}
         </Text>
         <Text style={{ fontSize: 13, color: colors.text.secondary, marginTop: 2 }}>
-          {offer.pickupStartTime
-            ? `${offer.pickupStartTime.slice(0, 5)}–${offer.pickupEndTime?.slice(0, 5) ?? ''}`
-            : ''}
+          {offer.pickupStartTime && offer.pickupEndTime
+            ? formatPickupWindow(offer.pickupStartTime, offer.pickupEndTime)
+            : offer.pickupStartTime
+              ? offer.pickupStartTime.slice(0, 5)
+              : ''}
           {offer.quantityAvailable
             ? ` · ${offer.quantityAvailable} ${t('customer.left')}`
             : ''}

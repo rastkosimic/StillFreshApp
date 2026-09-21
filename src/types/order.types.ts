@@ -67,6 +67,10 @@ export interface CancelOrderRequest {
   userLon?: number;
 }
 
+export interface RejectOrderRequest {
+  reason?: string;
+}
+
 export interface PaginatedResponse<T> {
   content: T[];
   totalElements: number;

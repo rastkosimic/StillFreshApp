@@ -155,7 +155,10 @@ export default function NotificationInitializer() {
           finalStatus = status;
         }
 
-        if (finalStatus !== 'granted') return;
+        if (finalStatus !== 'granted') {
+          console.warn('[notifications] Push permission not granted:', finalStatus);
+          return;
+        }
 
         // Small delay to ensure Firebase native layer is ready
         await new Promise((resolve) => setTimeout(resolve, 300));
@@ -166,10 +169,12 @@ export default function NotificationInitializer() {
 
         // Re-register on token rotation
         tokenListenerRef.current = Notifications.addPushTokenListener((token) => {
-          registerFCMToken(token.data);
+          registerFCMToken(token.data).catch((error: unknown) => {
+            console.warn('[notifications] FCM token refresh failed', error);
+          });
         });
-      } catch {
-        // Non-fatal: app still works without push notifications
+      } catch (error) {
+        console.warn('[notifications] FCM token registration failed', error);
       }
 
       // Foreground push: increment badge (will also trigger the system notification via handler above)

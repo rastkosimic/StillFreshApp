@@ -25,19 +25,27 @@ export default function BackButton({
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={
-        className ??
-        (isOverlay
-          ? 'w-9 h-9 rounded-full items-center justify-center'
-          : 'w-9 h-9 rounded-full bg-background items-center justify-center')
-      }
-      style={isOverlay ? [{ backgroundColor: 'rgba(255,255,255,0.82)' }, style] : style}
+      className={className ?? 'w-9 h-9 items-center justify-center'}
+      style={style}
       activeOpacity={0.7}
-      hitSlop={8}
+      hitSlop={12}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
     >
-      <Ionicons name="chevron-back" size={20} color={colors.text.primary} />
+      <Ionicons
+        name="chevron-back"
+        size={26}
+        color={isOverlay ? colors.text.inverse : colors.text.primary}
+        style={
+          isOverlay
+            ? {
+                textShadowColor: 'rgba(0,0,0,0.45)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 3,
+              }
+            : undefined
+        }
+      />
     </TouchableOpacity>
   );
 }

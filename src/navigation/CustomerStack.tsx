@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import AllSecureCardRegistrationScreen from '@/screens/customer/AllSecureCardRegistrationScreen';
+import CardRegistrationGuideScreen from '@/screens/customer/CardRegistrationGuideScreen';
 import CustomerSettingsScreen from '@/screens/customer/CustomerSettingsScreen';
 import OfferDetailsScreen from '@/screens/customer/OfferDetailsScreen';
 import OrderDetailScreen from '@/screens/customer/OrderDetailScreen';
@@ -23,6 +24,7 @@ export default function CustomerStack() {
       <Stack.Screen name="VendorMap" component={VendorMapScreen} />
       <Stack.Screen name="OfferDetails" component={OfferDetailsScreen} />
       <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+      <Stack.Screen name="CardRegistrationGuide" component={CardRegistrationGuideScreen} />
       <Stack.Screen name="AllSecureCardRegistration" component={AllSecureCardRegistrationScreen} />
       <Stack.Screen name="OrderPending" component={OrderPendingScreen} />
       <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
