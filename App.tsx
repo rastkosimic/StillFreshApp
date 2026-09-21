@@ -45,26 +45,38 @@ export default function App() {
 
   applyDefaultUiFont();
 
+  // Stripe is dormant until it becomes available/needed — only mount the provider
+  // when a publishable key is actually configured (empty key => native init errors).
+  const stripeEnabled = !!STRIPE_PUBLISHABLE_KEY;
+
+  const appContent = (
+    <I18nextProvider i18n={i18n}>
+      <AuthInitializer>
+        <NotificationInitializer />
+        <GeolocationProvider>
+          <NavigationContainer ref={navigationRef} theme={navigationTheme} linking={linking}>
+            <RootNavigator />
+          </NavigationContainer>
+        </GeolocationProvider>
+      </AuthInitializer>
+    </I18nextProvider>
+  );
+
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
         <StatusBar style="dark" backgroundColor="transparent" translucent />
-        <StripeProvider
-          publishableKey={STRIPE_PUBLISHABLE_KEY}
-          merchantIdentifier={STRIPE_MERCHANT_ID}
-          urlScheme={STRIPE_URL_SCHEME}
-        >
-          <I18nextProvider i18n={i18n}>
-            <AuthInitializer>
-              <NotificationInitializer />
-              <GeolocationProvider>
-                <NavigationContainer ref={navigationRef} theme={navigationTheme} linking={linking}>
-                  <RootNavigator />
-                </NavigationContainer>
-              </GeolocationProvider>
-            </AuthInitializer>
-          </I18nextProvider>
-        </StripeProvider>
+        {stripeEnabled ? (
+          <StripeProvider
+            publishableKey={STRIPE_PUBLISHABLE_KEY}
+            merchantIdentifier={STRIPE_MERCHANT_ID}
+            urlScheme={STRIPE_URL_SCHEME}
+          >
+            {appContent}
+          </StripeProvider>
+        ) : (
+          appContent
+        )}
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );

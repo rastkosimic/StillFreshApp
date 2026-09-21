@@ -23,9 +23,11 @@ function getDevBaseUrl(): string {
   return 'http://localhost:8080';
 }
 
-export const API_BASE_URL = __DEV__
-  ? getDevBaseUrl()
-  : 'https://api.stillfresh.com';
+// Explicit override wins in every mode (set EXPO_PUBLIC_API_URL in .env / EAS secrets).
+// Fallback: local dev-server host in development, prod domain placeholder otherwise.
+const ENV_API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+export const API_BASE_URL = ENV_API_URL || (__DEV__ ? getDevBaseUrl() : 'https://api.stillfresh.com');
 
 // Notification endpoints use the /api prefix per backend convention
 export const API_NOTIFICATIONS_PREFIX = '/api';

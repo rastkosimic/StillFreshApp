@@ -181,6 +181,8 @@ export async function getActiveOrders(page = 0, size = 20): Promise<Page<Order>>
     size,
     first: page === 0,
     last: !hasMore,
+    numberOfElements: content.length,
+    empty: content.length === 0,
   };
 }
 

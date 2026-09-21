@@ -626,7 +626,6 @@ export default function VendorMapScreen({ navigation }: CustomerStackScreenProps
           <TouchableOpacity
             onPress={() => setRangeOpen((v) => !v)}
             activeOpacity={0.8}
-            pointerEvents="auto"
             style={{
               flexDirection: 'row', alignItems: 'center', gap: 4,
               paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
