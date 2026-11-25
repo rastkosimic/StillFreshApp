@@ -69,6 +69,8 @@ export type VendorStackParamList = {
   CreateOffer: undefined;
   UpdateOffer: { offer: Offer; isReactivation: boolean };
   VendorOrderDetail: { orderId: number | string };
+  /** The location's own product list, used to pick offer contents (both vendor roles). */
+  VendorProducts: undefined;
   VendorNotifications: undefined;
   NotificationPreferences: undefined;
   VendorPaymentSettings: undefined;

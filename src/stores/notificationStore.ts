@@ -71,6 +71,7 @@ const ALL_TYPES_ENABLED: NotificationPreferences = {
     'BANK_TRANSFER_INITIATED',
     'BANK_TRANSFER_CONFIRMED',
     'BANKING_MODEL_CHANGED',
+    'VENDOR_FEE_CHANGED',
     'SYSTEM_ALERT',
   ],
 };

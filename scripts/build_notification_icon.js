@@ -6,7 +6,11 @@ const srcPath = path.join(__dirname, '..', 'assets', 'notification-icon-source.p
 const outPath = path.join(__dirname, '..', 'assets', 'notification-icon.png');
 const androidRes = path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'res');
 const size = 192;
-const grey = { r: 158, g: 158, b: 158, alpha: 1 };
+/** Large icon on the right of a notification. */
+const LARGE_FILL = 0.72;
+/** Status bar and the small icon on the left. 50% larger than LARGE_FILL, then 5% smaller. */
+const SMALL_FILL = LARGE_FILL * 1.5 * 0.95;
+const ICON_COLOR = '#FFFFFF';
 
 const DPI = {
   mdpi: 24,
@@ -16,9 +20,13 @@ const DPI = {
   xxxhdpi: 96,
 };
 
-async function buildAsset() {
-  const src = sharp(srcPath).ensureAlpha();
-  const { data, info } = await src.raw().toBuffer({ resolveWithObject: true });
+/**
+ * Android status-bar icons are an alpha mask. Any opaque pixel, including a
+ * grey plate behind the logo, is tinted as a solid square. Keep only the
+ * white outline and a transparent background.
+ */
+async function whiteSilhouette(targetSize, fill) {
+  const { data, info } = await sharp(srcPath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
   const glyph = Buffer.alloc(info.width * info.height * 4);
   let minX = info.width;
@@ -29,22 +37,24 @@ async function buildAsset() {
   for (let y = 0; y < info.height; y += 1) {
     for (let x = 0; x < info.width; x += 1) {
       const i = (y * info.width + x) * 4;
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const a = data[i + 3];
-      const keep = a > 40 && r > 180 && g > 180 && b > 180;
-      if (keep) {
-        glyph[i] = 255;
-        glyph[i + 1] = 255;
-        glyph[i + 2] = 255;
-        glyph[i + 3] = a;
-        if (x < minX) minX = x;
-        if (y < minY) minY = y;
-        if (x > maxX) maxX = x;
-        if (y > maxY) maxY = y;
-      }
+      const lum = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      // Source art has a baked-in checkerboard (~90–135). The outline is near-white.
+      if (lum < 170) continue;
+      const alpha = Math.round(Math.min(255, ((lum - 170) / (255 - 170)) * 255));
+      if (alpha < 16) continue;
+      glyph[i] = 255;
+      glyph[i + 1] = 255;
+      glyph[i + 2] = 255;
+      glyph[i + 3] = alpha;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
     }
+  }
+
+  if (maxX < minX || maxY < minY) {
+    throw new Error(`No visible pixels in ${srcPath}`);
   }
 
   const cropW = maxX - minX + 1;
@@ -56,31 +66,44 @@ async function buildAsset() {
     .png()
     .toBuffer();
 
-  const target = Math.round(size * 0.72);
-  const scale = target / Math.max(cropW, cropH);
-  const newW = Math.max(1, Math.round(cropW * scale));
-  const newH = Math.max(1, Math.round(cropH * scale));
-  const resizedGlyph = await sharp(cropped).resize(newW, newH).png().toBuffer();
-  const left = Math.round((size - newW) / 2);
-  const top = Math.round((size - newH) / 2);
+  const inner = Math.max(1, Math.round(targetSize * fill));
+  const resized = await sharp(cropped)
+    .resize(inner, inner, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .png()
+    .toBuffer();
 
-  await sharp({
+  if (inner > targetSize) {
+    const offset = Math.floor((inner - targetSize) / 2);
+    return sharp(resized)
+      .extract({ left: offset, top: offset, width: targetSize, height: targetSize })
+      .png()
+      .toBuffer();
+  }
+
+  return sharp({
     create: {
-      width: size,
-      height: size,
+      width: targetSize,
+      height: targetSize,
       channels: 4,
-      background: grey,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
   })
-    .composite([{ input: resizedGlyph, left, top }])
+    .composite([{ input: resized, gravity: 'center' }])
     .png()
-    .toFile(outPath);
+    .toBuffer();
+}
 
-  console.log(`wrote ${outPath} grey background white logo`);
+async function buildAsset() {
+  const png = await whiteSilhouette(size, SMALL_FILL);
+  await sharp(png).png().toFile(outPath);
+  console.log(`wrote ${outPath} (white outline, transparent background)`);
   return outPath;
 }
 
-async function writeAndroidDrawables(assetPath) {
+async function writeAndroidDrawables() {
   if (!fs.existsSync(androidRes)) {
     console.log('android/ not present; skip native copy');
     return;
@@ -90,34 +113,41 @@ async function writeAndroidDrawables(assetPath) {
     const folder = path.join(androidRes, `drawable-${dpi}`);
     fs.mkdirSync(folder, { recursive: true });
     const dest = path.join(folder, 'notification_icon.png');
-    await sharp(assetPath).resize(px, px, { fit: 'cover' }).png().toFile(dest);
+    await sharp(await whiteSilhouette(px, SMALL_FILL)).png().toFile(dest);
     console.log(`wrote ${dest}`);
   }
 
   const drawable = path.join(androidRes, 'drawable');
   fs.mkdirSync(drawable, { recursive: true });
-  await sharp(assetPath)
-    .resize(256, 256, { fit: 'cover' })
+  await sharp(await whiteSilhouette(256, LARGE_FILL))
     .png()
     .toFile(path.join(drawable, 'notification_large_icon.png'));
+  console.log('wrote notification_large_icon.png');
 
   const colorsPath = path.join(androidRes, 'values', 'colors.xml');
   if (fs.existsSync(colorsPath)) {
-    let colors = fs.readFileSync(colorsPath, 'utf8');
-    colors = colors.replace(
+    const colors = fs.readFileSync(colorsPath, 'utf8');
+    const next = colors.replace(
       /<color name="notification_icon_color">[^<]+<\/color>/,
-      '<color name="notification_icon_color">#9E9E9E</color>',
+      `<color name="notification_icon_color">${ICON_COLOR}</color>`,
     );
-    fs.writeFileSync(colorsPath, colors);
+    if (next !== colors) {
+      fs.writeFileSync(colorsPath, next);
+      console.log(`set notification_icon_color to ${ICON_COLOR}`);
+    }
   }
 }
 
 async function main() {
-  const assetPath = await buildAsset();
-  await writeAndroidDrawables(assetPath);
+  await buildAsset();
+  await writeAndroidDrawables();
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+module.exports = { buildAsset, writeAndroidDrawables, whiteSilhouette };

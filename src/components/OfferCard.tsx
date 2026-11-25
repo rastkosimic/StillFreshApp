@@ -28,9 +28,18 @@ export interface OfferCardProps {
   onPress?: () => void;
   onFavoriteToggle?: (offer: Offer) => void;
   isFavorite?: boolean;
-  /** Home rails stay compact; Favorites uses the full-width list layout. */
+  /** Home rails stay compact; Favorites is a dense full-width row. */
   variant?: 'rail' | 'list';
 }
+
+const LIST_IMAGE = 112;
+const CARD_SHADOW = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.09,
+  shadowRadius: 3,
+  elevation: 2,
+} as const;
 
 function QuantityBadge({ offer, greyed }: { offer: Offer; greyed: boolean }) {
   const { t } = useTranslation();
@@ -164,71 +173,70 @@ export default function OfferCard({
   if (variant === 'list') {
     return (
       <TouchableOpacity
-        className="bg-surface rounded-[14px] overflow-hidden w-full"
-        style={{
-          opacity: greyed ? 0.55 : 1,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.09,
-          shadowRadius: 3,
-          elevation: 2,
-        }}
+        className="bg-surface rounded-[14px] overflow-hidden w-full flex-row"
+        style={{ opacity: greyed ? 0.55 : 1, ...CARD_SHADOW }}
         onPress={greyed ? undefined : onPress}
         activeOpacity={greyed ? 1 : 0.8}
       >
-        <View className="w-full h-40 bg-primary-100">
+        <View
+          className="bg-primary-100"
+          style={{ width: LIST_IMAGE, height: LIST_IMAGE }}
+        >
           <AuthImage
             uri={offer.imageUrl}
             style={{ width: '100%', height: '100%' }}
             contentFit="cover"
             fallback={
               <View className="flex-1 items-center justify-center">
-                <Ionicons name="bag-handle-outline" size={36} color={colors.primary[400]} />
+                <Ionicons name="bag-handle-outline" size={28} color={colors.primary[400]} />
               </View>
             }
           />
           <QuantityBadge offer={offer} greyed={greyed} />
-          <VendorRatingBadge vendorId={offer.vendorId} size="small" />
-          {onFavoriteToggle ? (
-            <FavoriteButton
-              offer={offer}
-              isFavorite={isFavorite}
-              onFavoriteToggle={onFavoriteToggle}
-              className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-surface items-center justify-center"
-            />
-          ) : null}
-          <VendorAvatar uri={offer.vendorImageUrl} size={64} overlap />
         </View>
 
-        <View className="px-3.5 pt-10 pb-3">
-          {vendor ? (
-            <Text className="text-primary text-xs font-semibold" numberOfLines={1}>
-              {vendor}
-            </Text>
-          ) : null}
-          <Text className="text-text-primary text-base font-bold mt-0.5" numberOfLines={1}>
-            {offer.name}
-          </Text>
-
-          {pickupMeta ? (
-            <View className="flex-row items-center mt-1.5" style={{ gap: 6 }}>
-              <Ionicons name="time-outline" size={14} color={colors.text.secondary} />
-              <Text className="text-text-secondary text-xs flex-1" numberOfLines={1}>
-                {pickupMeta}
-              </Text>
+        <View className="flex-1 px-3 py-2.5 justify-between min-w-0">
+          <View>
+            <View className="flex-row items-start" style={{ gap: 8 }}>
+              <View className="flex-1 min-w-0">
+                {vendor ? (
+                  <Text className="text-primary text-xs font-semibold" numberOfLines={1}>
+                    {vendor}
+                  </Text>
+                ) : null}
+                <Text className="text-text-primary text-sm font-bold mt-0.5" numberOfLines={1}>
+                  {offer.name}
+                </Text>
+              </View>
+              {onFavoriteToggle ? (
+                <FavoriteButton
+                  offer={offer}
+                  isFavorite={isFavorite}
+                  onFavoriteToggle={onFavoriteToggle}
+                  className="w-9 h-9 items-center justify-center -mr-1 -mt-1"
+                />
+              ) : null}
             </View>
-          ) : null}
 
-          {location ? (
-            <View className="flex-row items-center mt-1" style={{ gap: 6 }}>
-              <Ionicons name="location-outline" size={14} color={colors.text.secondary} />
-              <Text className="text-text-secondary text-xs flex-1" numberOfLines={1}>
-                {location}
-              </Text>
-            </View>
-          ) : null}
+            {pickupMeta ? (
+              <View className="flex-row items-center mt-1" style={{ gap: 4 }}>
+                <Ionicons name="time-outline" size={13} color={colors.text.secondary} />
+                <Text className="text-text-secondary text-xs flex-1" numberOfLines={1}>
+                  {pickupMeta}
+                </Text>
+              </View>
+            ) : null}
 
-          <View className="h-px bg-border mt-2.5 mb-2" />
+            {location ? (
+              <View className="flex-row items-center mt-0.5" style={{ gap: 4 }}>
+                <Ionicons name="location-outline" size={13} color={colors.text.secondary} />
+                <Text className="text-text-secondary text-xs flex-1" numberOfLines={1}>
+                  {location}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
           <PriceRow offer={offer} greyed={greyed} />
         </View>
       </TouchableOpacity>
@@ -238,15 +246,11 @@ export default function OfferCard({
   return (
     <TouchableOpacity
       className="bg-surface rounded-[14px] overflow-hidden"
-      style={{
-        width: 175,
-        opacity: greyed ? 0.5 : 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.09,
-        shadowRadius: 3,
-        elevation: 2,
-      }}
+        style={{
+          width: 175,
+          opacity: greyed ? 0.5 : 1,
+          ...CARD_SHADOW,
+        }}
       onPress={greyed ? undefined : onPress}
       activeOpacity={greyed ? 1 : 0.8}
     >

@@ -22,6 +22,7 @@ const TITLE_KEY: Record<NotificationType, string> = {
   BANK_TRANSFER_INITIATED: 'notifications.bankTransferInitiated',
   BANK_TRANSFER_CONFIRMED: 'notifications.bankTransferConfirmed',
   BANKING_MODEL_CHANGED: 'notifications.bankingModelChanged',
+  VENDOR_FEE_CHANGED: 'notifications.vendorFeeChanged',
   SYSTEM_ALERT: 'notifications.systemAlert',
 };
 
@@ -75,6 +76,10 @@ const MESSAGE_KEY: Record<NotificationType, { full: string; short: string }> = {
   BANKING_MODEL_CHANGED: {
     full: 'notifications.msgBankingModelChanged',
     short: 'notifications.msgBankingModelChangedShort',
+  },
+  VENDOR_FEE_CHANGED: {
+    full: 'notifications.msgVendorFeeChanged',
+    short: 'notifications.msgVendorFeeChangedShort',
   },
   SYSTEM_ALERT: {
     full: 'notifications.msgSystemAlert',
@@ -258,7 +263,10 @@ function buildMessage(
   rawMessage: string | null | undefined,
   isVendor: boolean,
 ): string {
-  if (type === 'SYSTEM_ALERT' && rawMessage?.trim()) {
+  if (
+    (type === 'SYSTEM_ALERT' || type === 'VENDOR_FEE_CHANGED') &&
+    rawMessage?.trim()
+  ) {
     return rawMessage.trim();
   }
 
@@ -313,11 +321,15 @@ export function formatNotificationContent(
   );
 
   const vendorTitleKey = isVendor ? VENDOR_TITLE_KEY[type] : undefined;
+  const backendTitle = notification.title?.trim();
+  const usesBackendCopy = type === 'VENDOR_FEE_CHANGED' || type === 'SYSTEM_ALERT';
 
   const title =
     awaitingLiveStatus && orderId
       ? t('notifications.vendorOrderPending', { orderId })
-      : t(vendorTitleKey ?? TITLE_KEY[type] ?? 'notifications.systemAlert');
+      : usesBackendCopy && backendTitle
+        ? backendTitle
+        : t(vendorTitleKey ?? TITLE_KEY[type] ?? 'notifications.systemAlert');
 
   const message =
     awaitingLiveStatus && orderId

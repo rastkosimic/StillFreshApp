@@ -65,6 +65,10 @@ function routeToNotificationTarget(data: Record<string, string> | undefined): vo
           params: { screen: 'VendorDashboard' },
         });
         break;
+      case 'VENDOR_FEE_CHANGED':
+      case 'SYSTEM_ALERT':
+        navigationRef.navigate('VendorStack', { screen: 'VendorNotifications' });
+        break;
       default:
         // No type in payload — fall back to key-based routing
         if (data.chainId) {

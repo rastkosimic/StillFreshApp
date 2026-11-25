@@ -32,7 +32,7 @@ import { uploadVendorProfileImage } from '@/services/imageService';
 import { getVendorProfile, updateVendorProfile } from '@/services/vendorService';
 import { useAuthStore } from '@/stores/authStore';
 import { colors } from '@/theme/colors';
-import { countryNameToCode, getSupportedCountries } from '@/utils/countryCodeMapper';
+import { getCountryLabel, getSupportedCountries, resolveCountryKey } from '@/utils/countryCodeMapper';
 import { decodeJWTPayload } from '@/utils/jwtDecoder';
 
 type Props = VendorStackScreenProps<'VendorEditProfile'>;
@@ -44,7 +44,7 @@ interface Coords { latitude: number; longitude: number; }
 const SUPPORTED_COUNTRIES = getSupportedCountries();
 
 export default function VendorEditProfileScreen({ navigation }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
@@ -55,7 +55,10 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
   const [imageUri, setImageUri] = useState<string | null>(null);
 
   // ── Business info ─────────────────────────────────────────────────────────
-  const [username, setUsername] = useState('');
+  const [locationName, setLocationName] = useState('');
+  const [chainName, setChainName] = useState('');
+  // Only headquarters may rename the brand; the backend ignores it from a branch.
+  const [canEditChainName, setCanEditChainName] = useState(false);
   const [aboutBusiness, setAboutBusiness] = useState('');
   const [website, setWebsite] = useState('');
   const [businessType, setBusinessType] = useState<BusinessType | null>(null);
@@ -85,7 +88,8 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
   // ── Initial snapshot for dirty detection ─────────────────────────────────
   const [initial, setInitial] = useState<{
     imageUrl: string | null;
-    username: string;
+    locationName: string;
+    chainName: string;
     aboutBusiness: string;
     website: string;
     businessType: BusinessType | null;
@@ -107,7 +111,8 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
       .then((profile) => {
         const snap = {
           imageUrl: profile.imageUrl ?? null,
-          username: profile.locationName ?? '',
+          locationName: profile.locationName ?? '',
+          chainName: profile.chainName ?? '',
           aboutBusiness: profile.aboutBusiness ?? '',
           website: profile.website ?? '',
           businessType: (profile.businessType as BusinessType | undefined) ?? null,
@@ -120,7 +125,10 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
           phoneNumber: profile.phone ?? '',
         };
         setImageUrl(snap.imageUrl);
-        setUsername(snap.username);
+        setLocationName(snap.locationName);
+        setChainName(snap.chainName);
+        setCanEditChainName(profile.isChainLocation === true && profile.isHeadquarters === true);
+        setCountry(resolveCountryKey(profile.country) ?? 'Serbia');
         setAboutBusiness(snap.aboutBusiness);
         setWebsite(snap.website);
         setBusinessType(snap.businessType);
@@ -134,7 +142,7 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
       })
       .catch(() => {
         setInitial({
-          imageUrl: null, username: '', aboutBusiness: '', website: '',
+          imageUrl: null, locationName: '', chainName: '', aboutBusiness: '', website: '',
           businessType: null, foodTypes: [], days: [], certifications: [], contactPerson: '', phoneNumber: '',
         });
       })
@@ -180,7 +188,8 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
       ? false
       : imageUri !== null ||
         imageUrl !== initial.imageUrl ||
-        username !== initial.username ||
+        locationName !== initial.locationName ||
+        (canEditChainName && chainName !== initial.chainName) ||
         aboutBusiness !== initial.aboutBusiness ||
         website !== initial.website ||
         businessType !== initial.businessType ||
@@ -243,7 +252,10 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
       }
 
       await updateVendorProfile({
-        ...(username.trim() ? { username: username.trim() } : {}),
+        ...(locationName.trim() ? { locationName: locationName.trim() } : {}),
+        ...(canEditChainName && chainName.trim() && chainName.trim() !== initial?.chainName
+          ? { chainName: chainName.trim() }
+          : {}),
         ...(aboutBusiness.trim() ? { aboutBusiness: aboutBusiness.trim() } : {}),
         ...(website.trim() ? { website: website.trim() } : {}),
         ...(businessType ? { businessType } : {}),
@@ -256,7 +268,7 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
         // Include address only when user provided new values and geocoding succeeded
         ...(addressChanged && coords
           ? {
-              address: `${street.trim()}${streetNumber.trim() ? ' ' + streetNumber.trim() : ''}, ${city.trim()}, ${country.trim()}`,
+              address: `${street.trim()}${streetNumber.trim() ? ' ' + streetNumber.trim() : ''}, ${city.trim()}, ${getCountryLabel(country, 'sr')}`,
               latitude: coords.latitude,
               longitude: coords.longitude,
               zipCode: zipCode.trim(),
@@ -364,11 +376,23 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
         {/* ── Business info ───────────────────────────────────────────────────── */}
         <SectionHeader label={t('vendor.profile.sectionBusiness')} />
         <View style={{ backgroundColor: colors.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border }}>
+          {canEditChainName && (
+            <FieldRow label={t('vendor.profile.chainName')}>
+              <TextInput
+                style={{ fontSize: 15, color: colors.text.primary, flex: 1 }}
+                value={chainName}
+                onChangeText={setChainName}
+                placeholder={t('vendor.profile.chainName')}
+                placeholderTextColor={colors.text.secondary}
+                returnKeyType="next"
+              />
+            </FieldRow>
+          )}
           <FieldRow label={t('vendor.profile.locationName')}>
             <TextInput
               style={{ fontSize: 15, color: colors.text.primary, flex: 1 }}
-              value={username}
-              onChangeText={setUsername}
+              value={locationName}
+              onChangeText={setLocationName}
               placeholder={t('vendor.profile.locationName')}
               placeholderTextColor={colors.text.secondary}
               returnKeyType="next"
@@ -569,7 +593,7 @@ export default function VendorEditProfileScreen({ navigation }: Props) {
                   }}
                 >
                   <Text style={{ fontSize: 12, fontWeight: '600', color: country === c ? '#fff' : colors.text.secondary }}>
-                    {c}
+                    {getCountryLabel(c, i18n.language)}
                   </Text>
                 </TouchableOpacity>
               ))}

@@ -11,6 +11,7 @@ const ALL_TYPES: NotificationType[] = [
   'BANK_TRANSFER_INITIATED',
   'BANK_TRANSFER_CONFIRMED',
   'BANKING_MODEL_CHANGED',
+  'VENDOR_FEE_CHANGED',
   'SYSTEM_ALERT',
 ];
 
@@ -107,6 +108,24 @@ export function resolveNotificationType(
   if (isNotificationType(notification.type)) return notification.type;
 
   return 'SYSTEM_ALERT';
+}
+
+export const VENDOR_ORDER_NOTIFICATION_TYPES: NotificationType[] = [
+  'ORDER_RECEIVED',
+  'ORDER_CONFIRMED',
+  'ORDER_CANCELLED',
+  'ORDER_EXPIRED',
+  'ORDER_PICKUP_REMINDER',
+];
+
+export const VENDOR_OSTALO_NOTIFICATION_TYPES: NotificationType[] = [
+  'VENDOR_FEE_CHANGED',
+  'BANKING_MODEL_CHANGED',
+  'SYSTEM_ALERT',
+];
+
+export function isVendorOrderNotification(type: NotificationType): boolean {
+  return VENDOR_ORDER_NOTIFICATION_TYPES.includes(type);
 }
 
 export type OrderNotificationBadge =

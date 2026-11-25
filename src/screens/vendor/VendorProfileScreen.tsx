@@ -21,12 +21,13 @@ import { deleteVendorAccount, getVendorProfile, VendorProfile } from '@/services
 import { useAuthStore } from '@/stores/authStore';
 import { colors } from '@/theme/colors';
 import { fonts } from '@/theme/typography';
+import { getCountryLabel, resolveCountryKey } from '@/utils/countryCodeMapper';
 import { decodeJWTPayload } from '@/utils/jwtDecoder';
 
 type Props = VendorTabScreenProps<'VendorProfile'>;
 
 export default function VendorProfileScreen({ navigation }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -228,6 +229,19 @@ export default function VendorProfileScreen({ navigation }: Props) {
         </View>
       </View>
 
+      {/* Offers section — available to workers too, since anyone who creates offers uses it */}
+      <View style={{ marginTop: 28 }}>
+        <SectionHeader label={t('vendor.profile.sectionOffers')} />
+        <View style={{ backgroundColor: colors.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border }}>
+          <SettingsRow
+            icon="list-outline"
+            label={t('vendor.products.title')}
+            onPress={() => navigation.navigate('VendorProducts')}
+            isLast
+          />
+        </View>
+      </View>
+
       {/* Contact section */}
       <View style={{ marginTop: 28 }}>
         <SectionHeader label={t('vendor.profile.sectionContact')} />
@@ -235,7 +249,9 @@ export default function VendorProfileScreen({ navigation }: Props) {
           <InfoRow icon="person-outline" label={t('vendor.profile.contactPerson')} value={profile?.contactPerson || '—'} />
           <InfoRow icon="call-outline" label={t('vendor.profile.phone')} value={profile?.phone || '—'} />
           <InfoRow icon="location-outline" label={t('vendor.profile.address')} value={profile?.address || '—'} />
-          <InfoRow icon="globe-outline" label={t('vendor.profile.country')} value={profile?.country || '—'} />
+          <InfoRow icon="globe-outline" label={t('vendor.profile.country')} value={profile?.country
+            ? getCountryLabel(resolveCountryKey(profile.country) ?? profile.country, i18n.language)
+            : '—'} />
           <InfoRow icon="link-outline" label={t('vendor.profile.website')} value={profile?.website || '—'} />
         </View>
       </View>

@@ -147,11 +147,11 @@ export interface MoRBankDetailsResponse {
   manualPayoutMethod?: string;
 }
 
-// PUT /vendors/mor/bank-details — save request (full values required)
+// PUT /vendors/mor/bank-details — holder and 18-digit account are what a dinar transfer needs
 export interface MoRBankDetails {
   holderName: string;
-  accountNumber: string; // full, unmasked
-  bankName: string;
+  accountNumber: string; // full, unmasked, 18 digits
+  bankName?: string;
   swiftCode?: string;
   iban?: string;         // full, unmasked
   payoutMethod: MoRPayoutMethod;

@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import CreateOfferScreen from '@/screens/vendor/CreateOfferScreen';
 import UpdateOfferScreen from '@/screens/vendor/UpdateOfferScreen';
 import VendorOrderDetailScreen from '@/screens/vendor/VendorOrderDetailScreen';
+import VendorProductsScreen from '@/screens/vendor/VendorProductsScreen';
 import BankingModelManagementScreen from '@/screens/vendor/BankingModelManagementScreen';
 import ChainLocationManagementScreen from '@/screens/vendor/ChainLocationManagementScreen';
 import LocationFormScreen from '@/screens/vendor/LocationFormScreen';
@@ -31,6 +32,7 @@ export default function VendorStack() {
       <Stack.Screen name="CreateOffer" component={CreateOfferScreen} />
       <Stack.Screen name="UpdateOffer" component={UpdateOfferScreen} />
       <Stack.Screen name="VendorOrderDetail" component={VendorOrderDetailScreen} />
+      <Stack.Screen name="VendorProducts" component={VendorProductsScreen} />
       <Stack.Screen name="VendorNotifications" component={NotificationScreen} />
       <Stack.Screen name="NotificationPreferences" component={NotificationPreferencesScreen} />
       <Stack.Screen name="VendorPaymentSettings" component={PaymentSettingsScreen} />

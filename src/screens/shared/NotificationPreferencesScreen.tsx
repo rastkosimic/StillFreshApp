@@ -19,6 +19,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { colors } from '@/theme/colors';
 import { NotificationPreferences, NotificationType } from '@/types';
+import { VENDOR_OSTALO_NOTIFICATION_TYPES } from '@/utils/resolveNotificationType';
 
 // ── Per-type toggle definitions (role-filtered) ───────────────────────────────
 
@@ -38,7 +39,6 @@ const CUSTOMER_TYPES: TypeToggle[] = [
 const VENDOR_TYPES: TypeToggle[] = [
   { type: 'ORDER_RECEIVED', labelKey: 'notifications.orderReceived' },
   { type: 'ORDER_CANCELLED', labelKey: 'notifications.orderCancelled' },
-  { type: 'BANKING_MODEL_CHANGED', labelKey: 'notifications.bankingModelChanged' },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -59,6 +59,7 @@ function buildDefaultPrefs(): NotificationPreferences {
       'BANK_TRANSFER_INITIATED',
       'BANK_TRANSFER_CONFIRMED',
       'BANKING_MODEL_CHANGED',
+      'VENDOR_FEE_CHANGED',
       'SYSTEM_ALERT',
     ],
   };
@@ -200,6 +201,28 @@ export default function NotificationPreferencesScreen() {
 
   const typeToggles = isVendor ? VENDOR_TYPES : CUSTOMER_TYPES;
   const typesDisabled = !prefs.pushEnabled;
+  const ostaloEnabled = VENDOR_OSTALO_NOTIFICATION_TYPES.every((type) =>
+    prefs.enabledTypes.includes(type),
+  );
+
+  const toggleOstalo = useCallback(
+    (enabled: boolean) => {
+      setPrefs((current) => {
+        const withoutOstalo = current.enabledTypes.filter(
+          (type) => !VENDOR_OSTALO_NOTIFICATION_TYPES.includes(type),
+        );
+        const updated = {
+          ...current,
+          enabledTypes: enabled
+            ? [...withoutOstalo, ...VENDOR_OSTALO_NOTIFICATION_TYPES]
+            : withoutOstalo,
+        };
+        saveDebounced(updated);
+        return updated;
+      });
+    },
+    [saveDebounced],
+  );
 
   return (
     <View className="flex-1 bg-background">
@@ -251,6 +274,25 @@ export default function NotificationPreferencesScreen() {
               />
             ))}
           </View>
+
+          {isVendor && (
+            <>
+              <SectionLabel label={t('notifications.categoryOther')} />
+              <View
+                className="mx-4 rounded-[14px] overflow-hidden bg-surface border border-border mb-2"
+                style={{ opacity: typesDisabled ? 0.5 : 1 }}
+              >
+                <ToggleRow
+                  icon="pricetag-outline"
+                  label={t('notifications.otherCategory')}
+                  description={t('notifications.otherCategoryDesc')}
+                  value={ostaloEnabled}
+                  onValueChange={toggleOstalo}
+                  disabled={typesDisabled}
+                />
+              </View>
+            </>
+          )}
 
           {/* Email note */}
           <View className="mx-4 mt-2 px-4 py-3 bg-surface rounded-[14px] border border-border">

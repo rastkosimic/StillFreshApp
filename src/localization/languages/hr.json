@@ -291,7 +291,9 @@
       "deleteAccountConfirmMsg": "Ova radnja je nepovratna. Vaš račun i svi podaci bit će trajno obrisani.",
       "loadFailed": "Nije moguće učitati profil. Pokušajte se ponovno prijaviti.",
       "accountReactivated": "Dobrodošli natrag — vaš račun je ponovno aktiviran."
-    }
+    },
+    "bagContents": "Sadržaj paketa",
+    "bagContentsShowAll": "Prikaži još {{count}}"
   },
   "vendor": {
     "onboarding": {
@@ -518,6 +520,7 @@
       "tomorrow": "Sutra",
       "reactivationNote": "Ažurirajte datum/vrijeme i količinu za reaktivaciju ponude.",
       "priceValidation": "Diskontirana cijena mora biti niža od originalne.",
+      "quantityValidation": "Količina mora biti najmanje 1.",
       "reactivate": "Reaktiviraj ponudu",
       "basicInfo": "Osnovne informacije",
       "pricing": "Cijena",
@@ -532,7 +535,26 @@
       "fieldStart": "Početak",
       "fieldEnd": "Kraj",
       "fieldDietaryInfo": "Dijeta",
-      "fieldAllergens": "Alergeni"
+      "fieldAllergens": "Alergeni",
+      "contents": "Što je u paketu (opcionalno)",
+      "contentsHint": "Možete ostaviti prazno za paket iznenađenja. Ako navedete što kupac dobiva, lakše će se odlučiti.",
+      "contentsInThisBag": "U ovom paketu",
+      "contentsQuantityHint": "Količina po paketu nije obavezna.",
+      "contentsQuantityLess": "Smanji količinu: {{name}}",
+      "contentsQuantityMore": "Povećaj količinu: {{name}}",
+      "contentsRemove": "Ukloni iz paketa: {{name}}",
+      "contentsLimit": "Paket može imati najviše {{max}} stavki.",
+      "contentsMyProducts": "Moji proizvodi",
+      "contentsLoadFailed": "Popis proizvoda nije učitan.",
+      "contentsNoProducts": "Još nemate spremljenih proizvoda. Dodajte prvi i bit će vam pri ruci za sljedeće pakete.",
+      "contentsShowAll": "Prikaži sve ({{count}})",
+      "contentsShowFewer": "Prikaži manje",
+      "contentsAddNew": "Novi proizvod",
+      "contentsAddCta": "Dodaj u paket",
+      "contentsManage": "Uredi popis",
+      "contentsSaveToList": "Spremi u moje proizvode",
+      "contentsSaveToListHint": "Bit će ponuđen i za sljedeće pakete.",
+      "contentsListFull": "Popis proizvoda je pun ({{max}}), pa se ovaj naziv dodaje samo u ovaj paket."
     },
     "upgradeToChainScreen": {
       "title": "Nadogradnja na lanac",
@@ -615,6 +637,10 @@
       "removeCta": "Ukloni",
       "paymentSetupStartedTitle": "Postavljanje plaćanja započeto",
       "paymentSetupStartedMsg": "Dovršite isplate za {{locationName}} da bi mogla objavljivati ponude."
+    },
+    "profile": {
+      "chainName": "Naziv lanca",
+      "sectionOffers": "Ponude"
     },
     "locationForm": {
       "addTitle": "Dodaj lokaciju",
@@ -735,7 +761,28 @@
     "noOffersDesc": "Kreirajte prvi oglas za spašavanje hrane.",
     "invalidateConfirmTitle": "Poništi ponudu",
     "invalidateConfirmMsg": "Ova ponuda će biti deaktivirana i kupci je neće moći kupiti.",
-    "offerActions": "Radnje"
+    "offerActions": "Radnje",
+    "products": {
+      "title": "Moji proizvodi",
+      "intro": "Ovo je popis onoga što prodajete na ovoj lokaciji. Iz njega birate sadržaj paketa kada izrađujete ponudu.",
+      "listLabel": "Proizvodi",
+      "emptyTitle": "Još nema proizvoda",
+      "emptyDesc": "Dodajte ono što prodajete, pa pri izradi paketa samo odaberite s popisa.",
+      "add": "Dodaj proizvod",
+      "addCta": "Dodaj",
+      "namePlaceholder": "Naziv proizvoda",
+      "renameTitle": "Preimenuj proizvod",
+      "renameHint": "Ponude koje već navode ovaj proizvod zadržavaju stari naziv dok ih ne izmijenite.",
+      "renameA11y": "Preimenuj: {{name}}",
+      "deleteA11y": "Izbriši: {{name}}",
+      "deleteTitle": "Izbrisati „{{name}}“?",
+      "deleteMsg": "Proizvod se uklanja s popisa. Ponude koje ga već navode ostaju nepromijenjene.",
+      "limitReached": "Dosegnuli ste najveći broj proizvoda ({{max}}).",
+      "loadFailedTitle": "Popis proizvoda nije učitan",
+      "errorDuplicate": "Proizvod s tim nazivom već postoji.",
+      "errorNotFound": "Ovaj je proizvod u međuvremenu izbrisan.",
+      "errorGeneric": "Izmjena nije spremljena. Pokušajte ponovno."
+    }
   },
   "categories": {
     "MEALS": "Obroci",
@@ -874,6 +921,14 @@
     "pushEnabled": "Push obavijesti",
     "pushEnabledDesc": "Primajte push obavijesti za narudžbe i plaćanja",
     "notificationTypes": "Vrste obavijesti",
+    "categoryAll": "Sve",
+    "categoryOrders": "Narudžbe",
+    "categoryOther": "Ostalo",
+    "otherCategory": "Ostalo",
+    "otherCategoryDesc": "Provizija platforme, model bankarstva i sistemske obavijesti.",
+    "vendorFeeChanged": "Promjena provizije platforme",
+    "msgVendorFeeChanged": "Vaša provizija platforme je promijenjena.",
+    "msgVendorFeeChangedShort": "Vaša provizija platforme je promijenjena.",
     "emailNote": "Email obavijesti se upravljaju automatski",
     "orderConfirmed": "Narudžba potvrđena",
     "orderReceived": "Nova narudžba",

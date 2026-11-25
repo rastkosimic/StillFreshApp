@@ -16,12 +16,14 @@ import {
 } from 'react-native';
 
 import BackButton from '@/components/BackButton';
+import OfferItemsEditor from '@/components/OfferItemsEditor';
 import { VendorStackScreenProps } from '@/navigation/types';
 import { OFFER_CATEGORIES } from '@/config/categories';
 import { uploadImage } from '@/services/imageService';
 import { updateOffer } from '@/services/vendorService';
 import { colors } from '@/theme/colors';
-import { OfferCategory } from '@/types';
+import { OfferCategory, OfferItem } from '@/types';
+import { toOfferItemsPayload } from '@/utils/offerItems';
 
 type Props = VendorStackScreenProps<'UpdateOffer'>;
 
@@ -70,9 +72,13 @@ export default function UpdateOfferScreen({ route, navigation }: Props) {
 
   const [name, setName] = useState(offer.name);
   const [description, setDescription] = useState(offer.description ?? '');
+  // Optional: an empty list is a pure surprise bag and never blocks saving.
+  const [items, setItems] = useState<OfferItem[]>(offer.items ?? []);
   const [price, setPrice] = useState(String(offer.price));
   const [originalPrice, setOriginalPrice] = useState(String(offer.originalPrice ?? ''));
-  const [quantity, setQuantity] = useState(String(offer.quantityAvailable));
+  const [quantity, setQuantity] = useState(
+    isReactivation && offer.quantityAvailable <= 0 ? '' : String(offer.quantityAvailable),
+  );
   const [pickupDate, setPickupDate] = useState(
     offer.pickupDate ? apiDateToUi(offer.pickupDate) : todayString(),
   );
@@ -92,23 +98,28 @@ export default function UpdateOfferScreen({ route, navigation }: Props) {
 
   const priceNum = parseFloat(price);
   const originalPriceNum = parseFloat(originalPrice);
+  const quantityNum = Number.parseInt(quantity, 10);
   const priceError =
     price.length > 0 &&
     originalPrice.length > 0 &&
     !isNaN(priceNum) &&
     !isNaN(originalPriceNum) &&
     priceNum >= originalPriceNum;
+  const quantityError =
+    quantity.trim().length > 0 && (!Number.isFinite(quantityNum) || quantityNum < 1);
 
   const canSubmit =
     name.trim().length > 0 &&
     price.trim().length > 0 &&
     !isNaN(priceNum) &&
     quantity.trim().length > 0 &&
-    !isNaN(parseInt(quantity)) &&
+    Number.isFinite(quantityNum) &&
+    quantityNum >= 1 &&
     pickupDate.length === 10 &&
     pickupStart.length === 5 &&
     pickupEnd.length === 5 &&
-    !priceError;
+    !priceError &&
+    !quantityError;
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -141,12 +152,17 @@ export default function UpdateOfferScreen({ route, navigation }: Props) {
         description: description.trim(),
         price: priceNum,
         originalPrice: originalPriceNum || undefined,
-        quantityAvailable: parseInt(quantity),
+        quantityAvailable: quantityNum,
         pickupDate: uiDateToApi(pickupDate),
         pickupStartTime: uiTimeToApi(pickupStart),
         pickupEndTime: uiTimeToApi(pickupEnd),
         dietaryInfo: dietaryInfo.trim() || undefined,
         allergenInfo: allergenInfo.trim() || undefined,
+        // An empty list clears the contents. It is left out only when this offer came
+        // without the field and nothing was added, so stored contents are not wiped blindly.
+        ...(offer.items != null || items.length > 0
+          ? { items: toOfferItemsPayload(items) }
+          : {}),
         category: category ?? undefined,
         imageUrl,
       });
@@ -320,9 +336,17 @@ export default function UpdateOfferScreen({ route, navigation }: Props) {
           </StackedRow>
         </FormCard>
 
+        {/* CONTENTS (optional) */}
+        <SectionLabel title={t('vendor.offer.contents')} />
+        <OfferItemsEditor
+          items={items}
+          onChange={setItems}
+          onManageProducts={() => navigation.navigate('VendorProducts')}
+        />
+
         {/* PRICING */}
         <SectionLabel title={t('vendor.offer.pricing')} />
-        <FormCard error={priceError}>
+        <FormCard error={priceError || quantityError}>
           <InlineRow label={t('vendor.offer.fieldOurPrice')} required>
             <TextInput
               value={price}
@@ -359,7 +383,12 @@ export default function UpdateOfferScreen({ route, navigation }: Props) {
               onChangeText={setQuantity}
               placeholder={t('vendor.offer.quantityPlaceholder')}
               placeholderTextColor="#C7C7CC"
-              style={{ flex: 1, fontSize: 15, color: colors.text.primary, textAlign: 'right' }}
+              style={{
+                flex: 1,
+                fontSize: 15,
+                color: quantityError ? colors.error : colors.text.primary,
+                textAlign: 'right',
+              }}
               keyboardType="number-pad"
             />
           </InlineRow>
@@ -369,6 +398,13 @@ export default function UpdateOfferScreen({ route, navigation }: Props) {
             style={{ fontSize: 12, color: colors.error, marginHorizontal: 18, marginTop: 4 }}
           >
             {t('vendor.offer.priceValidation')}
+          </Text>
+        )}
+        {quantityError && (
+          <Text
+            style={{ fontSize: 12, color: colors.error, marginHorizontal: 18, marginTop: 4 }}
+          >
+            {t('vendor.offer.quantityValidation')}
           </Text>
         )}
 

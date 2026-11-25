@@ -9,6 +9,7 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -16,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AuthImage from '@/components/AuthImage';
 import BackButton from '@/components/BackButton';
+import OfferContents from '@/components/OfferContents';
 import QuantityModal from '@/components/QuantityModal';
 import RatingCategoryRow from '@/components/RatingCategoryRow';
 import { CustomerStackScreenProps } from '@/navigation/types';
@@ -34,9 +36,34 @@ import { formatPickupWindow } from '@/utils/formatDate';
 import { getQuantityLeftBadgeStyle } from '@/utils/getQuantityLeftBadgeStyle';
 import { navigateToVendorWithConfirm } from '@/utils/navigation';
 
-const HERO_HEIGHT = 280;
 const VENDOR_LOGO_SIZE = 57; // 52px + 10%
 const HERO_VENDOR_BOTTOM = 14;
+
+// The hero scales with the screen so the offer name, its contents, the pickup time and the
+// address all sit above the reserve bar without scrolling, on a 360x640 phone too.
+const HERO_SCREEN_SHARE = 0.28;
+const HERO_MIN_HEIGHT = 190;
+const HERO_MAX_HEIGHT = 240;
+const HERO_NAV_TOP = 10;
+const HERO_NAV_HEIGHT = 36;
+const HERO_NAV_TO_VENDOR_GAP = 8;
+
+/**
+ * Same height for every offer, with or without listed contents, so the screen does not jump
+ * from offer to offer. Never so short that the top buttons run into the vendor strip.
+ */
+function getHeroHeight(windowHeight: number, topInset: number): number {
+  const scaled = Math.round(windowHeight * HERO_SCREEN_SHARE);
+  const clamped = Math.min(HERO_MAX_HEIGHT, Math.max(HERO_MIN_HEIGHT, scaled));
+  const needed =
+    topInset +
+    HERO_NAV_TOP +
+    HERO_NAV_HEIGHT +
+    HERO_NAV_TO_VENDOR_GAP +
+    VENDOR_LOGO_SIZE +
+    HERO_VENDOR_BOTTOM;
+  return Math.max(clamped, needed);
+}
 
 class MapErrorBoundary extends Component<
   { fallback: React.ReactNode; children: React.ReactNode },
@@ -65,6 +92,8 @@ export default function OfferDetailsScreen({ route, navigation }: Props) {
   const { offerId } = route.params;
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const heroHeight = getHeroHeight(windowHeight, insets.top);
 
   const [offer, setOffer] = useState<Offer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,9 +157,9 @@ export default function OfferDetailsScreen({ route, navigation }: Props) {
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      setHeaderVisible(e.nativeEvent.contentOffset.y > HERO_HEIGHT - 60);
+      setHeaderVisible(e.nativeEvent.contentOffset.y > heroHeight - 60);
     },
-    [],
+    [heroHeight],
   );
 
   const isUnavailable =
@@ -241,7 +270,7 @@ export default function OfferDetailsScreen({ route, navigation }: Props) {
 
         {/* ── Hero + vendor strip + info card ── */}
         <View style={{ position: 'relative' }}>
-          <View style={{ height: HERO_HEIGHT, backgroundColor: colors.primary[100] }}>
+          <View style={{ height: heroHeight, backgroundColor: colors.primary[100] }}>
             <AuthImage
               uri={offer.imageUrl}
               style={{ width: '100%', height: '100%' }}
@@ -265,7 +294,7 @@ export default function OfferDetailsScreen({ route, navigation }: Props) {
             <View
               style={{
                 position: 'absolute',
-                top: insets.top + 10,
+                top: insets.top + HERO_NAV_TOP,
                 left: 16,
                 right: 16,
                 flexDirection: 'row',
@@ -398,6 +427,9 @@ export default function OfferDetailsScreen({ route, navigation }: Props) {
               {offer.name}
             </Text>
           </View>
+
+          {/* Contents listed by the vendor; renders nothing for a pure surprise bag */}
+          <OfferContents items={offer.items} />
 
           {/* Rating */}
           {displayRating != null && (

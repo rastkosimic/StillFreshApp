@@ -635,9 +635,11 @@ COMPLETED             →  Exit onboarding → VendorProfileCompletionScreen
 - "Reserve" button → payment methods check → quantity input modal → confirm → place order
 - Favorite toggle button
 - Share button (native share sheet with offer name, vendor, time, address)
+- Bag contents: when the offer has `items`, they show as chips (`2× Kroasan`, or just the name when no quantity was given) directly under the offer name, before rating and pickup time. At most two rows; the last chip then reads `+N` and expands the rest in place. An offer without `items` shows nothing there (pure surprise bag).
 
 #### Notes
 
+- Hero image height follows the screen (28% of window height, clamped to 190–240, never less than what the top buttons and vendor strip need), and is the same for every offer. The offer name, contents chips, pickup time and address must all be visible above the reserve bar without scrolling on a 360×640 phone.
 - Vendor rating fetch is non-blocking; defaults to zero if it fails
 - Payment methods must exist before reservation; show error alert if none
 - Pickup window is read-only (set by vendor)
@@ -934,13 +936,30 @@ All fields use `PUT /users` with the relevant field in the request body:
   "dietaryInfo": "string (optional)",
   "allergenInfo": "string (optional)",
   "imageUrl": "string (optional)",
-  "category": "MEALS (optional)"
+  "category": "MEALS (optional)",
+  "items": [
+    { "productId": 12, "name": "Kroasan", "quantity": 2 },
+    { "name": "Sezonsko voće" }
+  ]
 }
 ```
+
+**`items` (optional bag contents):**
+
+- Missing or empty = pure surprise bag. Neither the app nor the server requires items.
+- Each item: `name` (required, 1–60 characters after trimming), `quantity` (optional, 1–99, pieces per bag), `productId` (optional, the vendor product the line was picked from; absent for a name typed only for this offer).
+- At most 20 items. The server validates only when items are sent and answers 400 otherwise.
+- The name is stored with the offer, so customers keep seeing it as listed even if the product is later renamed or deleted.
 
 #### User Interactions
 
 - Required fields: Name, Description, Discounted Price, Original Price, Quantity Available
+- Optional section "What's in the bag" (between basic info and pricing), `OfferItemsEditor`:
+  - Chips of the location's own products (`GET /vendors/products`); tap adds/removes a product. No products are ever suggested by the app; the list holds only what the vendor entered.
+  - Each chosen item has an optional quantity stepper (none → 1 → 2 …; stepping below 1 clears it) and a remove button.
+  - "New product" opens a name sheet with a "Save to my products" switch (on by default → `POST /vendors/products`; off → the name is used for this offer only).
+  - "Edit list" → VendorProductsScreen.
+  - Leaving the section empty never blocks saving and shows no error.
 - Pickup info: Date picker (DD-MM-YYYY in UI → YYYY-MM-DD to backend), Start Time, End Time
 - Quick presets: "Today", "Tomorrow", "12:00-14:00", "14:00-16:00", "16:00-18:00"
 - Optional: Dietary Info, Allergen Info, Category selector
@@ -981,6 +1000,39 @@ All fields use `PUT /users` with the relevant field in the request body:
 
 - Same date/time format conversions as CreateOfferScreen apply
 - Reactivation: update pickup date/time to a future window and/or increase quantity
+- `items` on update: field omitted = stored contents stay untouched; empty array = contents cleared (back to a surprise bag); non-empty array = contents replaced. The screen pre-fills the "What's in the bag" section from `offer.items` and sends the edited list; item names picked from the product list follow the product's current name.
+
+---
+
+### VendorProductsScreen
+
+**Role:** Vendor (both `VENDOR_ADMIN` and `VENDOR` workers — anyone who can create offers)
+**Purpose:** The location's own product list ("My products"), used to pick bag contents when creating or editing an offer. The vendor writes the list; nothing is pre-filled or suggested.
+**Navigates from:** VendorProfileScreen ("My products" row), CreateOfferScreen / UpdateOfferScreen ("Edit list")
+**Navigates to:** back
+
+#### API Calls
+
+| Action | Method | Endpoint | Request Body | Response Shape |
+|--------|--------|----------|--------------|----------------|
+| List products | GET | `/vendors/products` | — | `VendorProduct[]` sorted by name |
+| Add product | POST | `/vendors/products` | `{ name: string }` | 201 `VendorProduct` |
+| Rename product | PUT | `/vendors/products/{id}` | `{ name: string }` | `VendorProduct` |
+| Delete product | DELETE | `/vendors/products/{id}` | — | empty |
+
+#### User Interactions
+
+- List of product names with rename and delete per row; "Add product" button fixed at the bottom
+- Add/rename in a bottom sheet that lifts with the keyboard; name limited to 60 characters
+- Delete asks for confirmation
+- Empty state when the list has no products; pull-to-refresh
+
+#### Notes
+
+- The list is per location. The backend scopes every call to the caller's location; a worker uses the list of the location they are assigned to. No location id is sent.
+- Names are unique per location ignoring case → 409 on a duplicate. At most 200 products per location → 400.
+- Error body: `{ success: false, errorMessage, code }` with `code` one of `PRODUCT_NAME_INVALID` (400), `PRODUCT_LIMIT_REACHED` (400), `PRODUCT_NAME_TAKEN` (409), `PRODUCT_NOT_FOUND` (404).
+- Renaming or deleting a product does not change offers that already list it; they keep the name they were saved with until the offer is edited.
 
 ---
 
@@ -1542,13 +1594,14 @@ These screens are only visible to vendors using the **MoR** payment model.
 
 | Action | Method | Endpoint | Request Body | Response Shape |
 |--------|--------|----------|--------------|----------------|
-| Submit bank details | POST | `/vendors/mor/bank-details` | `{ holderName, accountNumber, bankName, swiftCode?, iban?, payoutMethod: "BANK" \| "WISE" \| "OTHER" }` | 200 OK |
+| Submit bank details | PUT | `/vendors/mor/bank-details` | `{ holderName, accountNumber, payoutMethod: "BANK" }` | 200 OK |
 
 #### User Interactions
 
-- Required: Holder Name, Account Number, Bank Name
-- Optional: SWIFT code, IBAN
-- Payout method selector: BANK (default), WISE, OTHER
+- Required from the vendor: account holder name and Serbian current account (18 digits, or a pasted RS IBAN which is reduced to those 18 digits)
+- The holder name is entered in up to 3 lines of 35 characters. The first line is required; the next two are an optional continuation of the same name. They are saved as one `holderName` string
+- Bank name, SWIFT and IBAN are not collected or sent
+- Payout method is always `BANK`
 - "Save" button; "Cancel" button
 
 ---
@@ -1724,6 +1777,10 @@ These screens are only visible to vendors using the **MoR** payment model.
 | POST | `/vendors/offer-create` | Create new offer |
 | POST | `/vendors/update-offer/{offerId}` | Update/reactivate offer |
 | POST | `/vendors/invalidate-offer/{offerId}` | Invalidate an active offer |
+| GET | `/vendors/products` | List the location's own products (for offer contents) |
+| POST | `/vendors/products` | Add a product to the location's list |
+| PUT | `/vendors/products/{id}` | Rename a product |
+| DELETE | `/vendors/products/{id}` | Delete a product |
 | DELETE | `/vendors/delete` | Delete vendor account |
 | POST | `/vendors/upgrade-to-chain` | Upgrade unique vendor to chain |
 | GET | `/vendors/banking-info` | Get chain banking model info |
@@ -1779,7 +1836,7 @@ These screens are only visible to vendors using the **MoR** payment model.
 | GET | `/vendors/mor/payouts` | List MoR payouts |
 | POST | `/vendors/mor/request-payout` | Request MoR payout |
 | GET | `/vendors/mor/bank-details` | Get saved bank details |
-| POST | `/vendors/mor/bank-details` | Submit bank details |
+| PUT | `/vendors/mor/bank-details` | Submit bank details |
 
 #### Offers (Public / Customer)
 
@@ -1895,6 +1952,7 @@ These screens are only visible to vendors using the **MoR** payment model.
   category?: string
   dietaryInfo?: string
   allergenInfo?: string
+  items?: OfferItem[]          // optional bag contents; empty or missing = surprise bag
   vendorId?: number
   vendorName?: string
   vendorAddress?: string
@@ -1904,6 +1962,25 @@ These screens are only visible to vendors using the **MoR** payment model.
   pickupDaySlot?: string       // "TODAY" | "TOMORROW" | etc. — set by backend
   pickupMealSlot?: string      // "LUNCH" | "BREAKFAST" | "DINNER" — set by backend
   status?: "ACTIVE" | "EXPIRED" | "SOLD_OUT" | "INACTIVE"
+}
+```
+
+### OfferItem
+
+```typescript
+{
+  productId?: number | null    // vendor product the line was picked from; absent for a one-off name
+  name: string                 // 1–60 characters; stored with the offer
+  quantity?: number | null     // 1–99 pieces per bag; absent when the vendor did not say
+}
+```
+
+### VendorProduct
+
+```typescript
+{
+  id: number
+  name: string                 // unique per location, ignoring case
 }
 ```
 

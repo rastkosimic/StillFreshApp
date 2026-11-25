@@ -12,31 +12,28 @@ import {
   View,
 } from 'react-native';
 
+import HolderNameLinesInput from '@/components/HolderNameLinesInput';
 import { OnboardingStackScreenProps } from '@/navigation/types';
 import { getPaymentStatus, saveMoRBankDetails } from '@/services/vendorPaymentService';
 import { getOnboardingStatus, setupPaymentAccount } from '@/services/vendorService';
 import { useAuthStore } from '@/stores/authStore';
 import { colors } from '@/theme/colors';
-import { MoRPayoutMethod, PayoutModel } from '@/types';
+import { PayoutModel } from '@/types';
 import { mapChainError } from '@/utils/chainErrors';
 import {
-  DEFAULT_IBAN_COUNTRY,
+  ACCOUNT_NUMBER_INPUT_MAX_LENGTH,
+  EMPTY_HOLDER_NAME_LINES,
   formatAccountNumberInput,
-  formatIbanInput,
-  formatSwiftInput,
-  getIbanCountryCode,
-  getIbanDisplayMaxLength,
-  getIbanRawMaxLength,
-  IBAN_LENGTH_BY_COUNTRY,
-  stripBankFormatting,
+  holderNameLineError,
+  isCompleteAccountInput,
+  joinHolderNameLines,
   validateAccountNumber,
-  validateIban,
-  validateSwift,
+  type HolderNameLines,
 } from '@/utils/formatBankDetails';
 
 type Props = OnboardingStackScreenProps<'PaymentAccountSetup'>;
 
-type FieldKey = 'holderName' | 'accountNumber' | 'bankName' | 'swiftCode' | 'iban';
+type FieldKey = 'holderName' | 'accountNumber';
 type FieldErrors = Partial<Record<FieldKey, string>>;
 
 export default function PaymentAccountSetupScreen({ route, navigation }: Props) {
@@ -51,13 +48,9 @@ export default function PaymentAccountSetupScreen({ route, navigation }: Props) 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // MoR bank detail fields
-  const [holderName, setHolderName] = useState('');
+  const [holderLines, setHolderLines] = useState<HolderNameLines>(EMPTY_HOLDER_NAME_LINES);
+  const [holderOverflow, setHolderOverflow] = useState(false);
   const [accountNumber, setAccountNumber] = useState('');
-  const [bankName, setBankName] = useState('');
-  const [swiftCode, setSwiftCode] = useState('');
-  const [iban, setIban] = useState('');
-  const [payoutMethod, setPayoutMethod] = useState<MoRPayoutMethod>('BANK');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   useEffect(() => {
@@ -92,8 +85,9 @@ export default function PaymentAccountSetupScreen({ route, navigation }: Props) 
   }, [setUser]);
 
   const isMoR = payoutModel !== null && payoutModel !== 'CONNECT';
+  const parsedAccount = isMoR ? validateAccountNumber(accountNumber) : null;
   const canSubmit = isMoR
-    ? holderName.trim().length > 0 && accountNumber.trim().length > 0 && bankName.trim().length > 0
+    ? holderNameLineError(holderLines) === null && !holderOverflow && parsedAccount?.ok === true
     : true;
 
   const clearFieldError = (key: FieldKey) =>
@@ -110,38 +104,23 @@ export default function PaymentAccountSetupScreen({ route, navigation }: Props) 
   const validateMoRForm = (): boolean => {
     const next: FieldErrors = {};
 
-    if (!holderName.trim()) next.holderName = t('payment.fieldRequired');
-    if (!bankName.trim()) next.bankName = t('payment.fieldRequired');
+    const nameError = holderOverflow
+      ? t('payment.holderNameTooLong')
+      : holderNameLineError(holderLines) === 'gap'
+        ? t('payment.holderNameGap')
+        : holderNameLineError(holderLines) === 'empty'
+          ? t('payment.fieldRequired')
+          : null;
+    if (nameError) next.holderName = nameError;
 
     const account = validateAccountNumber(accountNumber);
     if (!account.ok) {
       next.accountNumber =
-        account.reason === 'empty' ? t('payment.fieldRequired') : t('payment.accountNumberInvalid');
-    }
-
-    if (swiftCode.trim()) {
-      const swift = validateSwift(swiftCode);
-      if (!swift.ok && swift.reason !== 'empty') {
-        next.swiftCode =
-          swift.reason === 'length'
-            ? t('payment.swiftLengthInvalid')
-            : t('payment.swiftFormatInvalid');
-      }
-    }
-
-    if (iban.trim()) {
-      const ibanResult = validateIban(iban);
-      if (!ibanResult.ok && ibanResult.reason !== 'empty') {
-        if (ibanResult.reason === 'length') {
-          const country = getIbanCountryCode(iban) ?? DEFAULT_IBAN_COUNTRY;
-          const length = IBAN_LENGTH_BY_COUNTRY[country] ?? getIbanRawMaxLength(iban);
-          next.iban = t('payment.ibanLengthInvalid', { length, country });
-        } else if (ibanResult.reason === 'checksum') {
-          next.iban = t('payment.ibanChecksumInvalid');
-        } else {
-          next.iban = t('payment.ibanFormatInvalid');
-        }
-      }
+        account.reason === 'empty'
+          ? t('payment.fieldRequired')
+          : account.reason === 'checksum'
+            ? t('payment.accountNumberChecksumInvalid')
+            : t('payment.accountNumberInvalid');
     }
 
     setFieldErrors(next);
@@ -157,24 +136,24 @@ export default function PaymentAccountSetupScreen({ route, navigation }: Props) 
 
     if (isMoR) {
       try {
+        const account = validateAccountNumber(accountNumber);
+        if (!account.ok) {
+          setIsSubmitting(false);
+          return;
+        }
         await saveMoRBankDetails({
-          holderName: holderName.trim(),
-          accountNumber: accountNumber.trim(),
-          bankName: bankName.trim(),
-          swiftCode: swiftCode.trim()
-            ? stripBankFormatting(swiftCode)
-            : undefined,
-          iban: iban.trim() ? stripBankFormatting(iban) : undefined,
-          payoutMethod,
+          holderName: joinHolderNameLines(holderLines),
+          accountNumber: account.accountNumber,
+          payoutMethod: 'BANK',
         });
       } catch (err: unknown) {
         const mapped = mapChainError(err);
         const message = t(mapped.key, { defaultValue: mapped.raw });
-        if (mapped.field === 'iban') setFieldError('iban', message);
-        else if (mapped.field === 'swift') setFieldError('swiftCode', message);
-        else if (mapped.field === 'accountNumber') setFieldError('accountNumber', message);
-        else if (/swift|bic/i.test(mapped.raw)) setFieldError('swiftCode', message);
-        else if (/iban/i.test(mapped.raw)) setFieldError('iban', message);
+        if (mapped.field === 'accountNumber' || /account/i.test(mapped.raw)) {
+          setFieldError('accountNumber', message);
+        } else if (mapped.field === 'holderName') {
+          setFieldError('holderName', message);
+        }
 
         Alert.alert(t('common.error'), message || t('errors.serverError'));
         setIsSubmitting(false);
@@ -247,71 +226,51 @@ export default function PaymentAccountSetupScreen({ route, navigation }: Props) 
               </View>
 
               <FormCard>
-                <InlineRow
-                  label={t('auth.contactName')}
-                  required
-                  value={holderName}
-                  onChangeText={(v) => {
-                    setHolderName(v);
-                    clearFieldError('holderName');
-                  }}
-                  placeholder="Ime i prezime / Naziv firme"
-                  error={fieldErrors.holderName}
-                />
+                <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+                  <HolderNameLinesInput
+                    lines={holderLines}
+                    error={fieldErrors.holderName}
+                    onChange={(lines, overflow) => {
+                      setHolderLines(lines);
+                      setHolderOverflow(overflow);
+                      if (overflow) {
+                        setFieldError('holderName', t('payment.holderNameTooLong'));
+                        return;
+                      }
+                      if (holderNameLineError(lines) === 'gap') {
+                        setFieldError('holderName', t('payment.holderNameGap'));
+                        return;
+                      }
+                      clearFieldError('holderName');
+                    }}
+                  />
+                </View>
                 <Divider />
                 <InlineRow
-                  label="Broj računa"
+                  label={t('payment.accountNumber')}
                   required
                   value={accountNumber}
                   onChangeText={(v) => {
-                    setAccountNumber(formatAccountNumberInput(v));
-                    clearFieldError('accountNumber');
+                    const formatted = formatAccountNumberInput(v);
+                    setAccountNumber(formatted);
+                    const parsed = validateAccountNumber(formatted);
+                    if (parsed.ok || !isCompleteAccountInput(formatted)) {
+                      clearFieldError('accountNumber');
+                      return;
+                    }
+                    setFieldError(
+                      'accountNumber',
+                      parsed.reason === 'checksum'
+                        ? t('payment.accountNumberChecksumInvalid')
+                        : t('payment.accountNumberInvalid'),
+                    );
                   }}
-                  placeholder="npr. 205-12345678-99"
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={34}
+                  placeholder="160-0000000380290-23"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  maxLength={ACCOUNT_NUMBER_INPUT_MAX_LENGTH}
                   error={fieldErrors.accountNumber}
                   hint={fieldErrors.accountNumber ? undefined : t('payment.accountNumberHint')}
-                />
-                <Divider />
-                <InlineRow
-                  label="Banka"
-                  required
-                  value={bankName}
-                  onChangeText={(v) => {
-                    setBankName(v);
-                    clearFieldError('bankName');
-                  }}
-                  placeholder="npr. Raiffeisen banka"
-                  error={fieldErrors.bankName}
-                />
-                <Divider />
-                <InlineRow
-                  label="IBAN"
-                  value={iban}
-                  onChangeText={(v) => {
-                    setIban(formatIbanInput(v));
-                    clearFieldError('iban');
-                  }}
-                  placeholder="RS35 2600 ..."
-                  autoCapitalize="characters"
-                  maxLength={getIbanDisplayMaxLength(iban)}
-                  error={fieldErrors.iban}
-                  hint={fieldErrors.iban ? undefined : t('payment.ibanOptionalHint')}
-                />
-                <Divider />
-                <InlineRow
-                  label="SWIFT / BIC"
-                  value={swiftCode}
-                  onChangeText={(v) => {
-                    setSwiftCode(formatSwiftInput(v));
-                    clearFieldError('swiftCode');
-                  }}
-                  placeholder="npr. RZBSRSBG"
-                  autoCapitalize="characters"
-                  maxLength={11}
-                  error={fieldErrors.swiftCode}
-                  hint={fieldErrors.swiftCode ? undefined : t('payment.swiftHint')}
                 />
               </FormCard>
 
@@ -468,6 +427,7 @@ function InlineRow({
   required,
   keyboardType,
   autoCapitalize,
+  autoCorrect,
   maxLength,
   error,
   hint,
@@ -479,6 +439,7 @@ function InlineRow({
   required?: boolean;
   keyboardType?: 'default' | 'numeric' | 'email-address' | 'numbers-and-punctuation';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCorrect?: boolean;
   maxLength?: number;
   error?: string;
   hint?: string;
@@ -511,6 +472,7 @@ function InlineRow({
           placeholderTextColor="#C7C7CC"
           keyboardType={keyboardType ?? 'default'}
           autoCapitalize={autoCapitalize}
+          autoCorrect={autoCorrect ?? false}
           maxLength={maxLength}
           style={{
             flex: 1,
@@ -523,7 +485,6 @@ function InlineRow({
             paddingHorizontal: hasError ? 8 : 0,
             paddingVertical: hasError ? 6 : 0,
           }}
-          autoCorrect={false}
         />
       </View>
       {error ? (

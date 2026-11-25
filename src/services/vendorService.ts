@@ -10,6 +10,7 @@ import {
   LocationCreationResponse,
   LocationRequest,
   Offer,
+  OfferItem,
   OnboardingStatusResponse,
   PayoutModel,
   VendorDashboardResponse,
@@ -135,6 +136,10 @@ export async function getVendorProfile(userId: number | string): Promise<VendorP
 
 export interface UpdateVendorProfileRequest {
   username?: string;
+  /** Place name customers see. Not the login username. */
+  locationName?: string;
+  /** Brand name. Applied only when headquarters or a standalone vendor sends it. */
+  chainName?: string;
   businessType?: string;
   operatingHours?: string[];
   surplusFoodDetails?: string[];
@@ -173,6 +178,11 @@ export interface CreateOfferRequest {
   imageUrl?: string;
   dietaryInfo?: string;
   allergenInfo?: string;
+  /**
+   * Optional contents of the bag. An empty list is a pure surprise bag. On update, leaving
+   * the field out keeps the stored contents, while an empty list clears them.
+   */
+  items?: OfferItem[];
 }
 
 export async function getAllOffers(): Promise<Offer[]> {

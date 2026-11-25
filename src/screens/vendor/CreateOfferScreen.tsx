@@ -16,12 +16,14 @@ import {
 } from 'react-native';
 
 import BackButton from '@/components/BackButton';
+import OfferItemsEditor from '@/components/OfferItemsEditor';
 import { VendorStackScreenProps } from '@/navigation/types';
 import { OFFER_CATEGORIES } from '@/config/categories';
 import { uploadImage } from '@/services/imageService';
 import { createOffer } from '@/services/vendorService';
 import { colors } from '@/theme/colors';
-import { OfferCategory } from '@/types';
+import { OfferCategory, OfferItem } from '@/types';
+import { toOfferItemsPayload } from '@/utils/offerItems';
 
 type Props = VendorStackScreenProps<'CreateOffer'>;
 
@@ -59,6 +61,8 @@ export default function CreateOfferScreen({ navigation }: Props) {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  // Optional: an empty list is a pure surprise bag and never blocks saving.
+  const [items, setItems] = useState<OfferItem[]>([]);
   const [price, setPrice] = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -73,12 +77,15 @@ export default function CreateOfferScreen({ navigation }: Props) {
 
   const priceNum = parseFloat(price);
   const originalPriceNum = parseFloat(originalPrice);
+  const quantityNum = Number.parseInt(quantity, 10);
   const priceError =
     price.length > 0 &&
     originalPrice.length > 0 &&
     !isNaN(priceNum) &&
     !isNaN(originalPriceNum) &&
     priceNum >= originalPriceNum;
+  const quantityError =
+    quantity.trim().length > 0 && (!Number.isFinite(quantityNum) || quantityNum < 1);
 
   const canSubmit =
     name.trim().length > 0 &&
@@ -86,11 +93,13 @@ export default function CreateOfferScreen({ navigation }: Props) {
     price.trim().length > 0 &&
     !isNaN(priceNum) &&
     quantity.trim().length > 0 &&
-    !isNaN(parseInt(quantity)) &&
+    Number.isFinite(quantityNum) &&
+    quantityNum >= 1 &&
     pickupDate.length === 10 &&
     pickupStart.length === 5 &&
     pickupEnd.length === 5 &&
-    !priceError;
+    !priceError &&
+    !quantityError;
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -123,12 +132,13 @@ export default function CreateOfferScreen({ navigation }: Props) {
         description: description.trim(),
         price: priceNum,
         originalPrice: originalPriceNum || undefined,
-        quantityAvailable: parseInt(quantity),
+        quantityAvailable: quantityNum,
         pickupDate: uiDateToApi(pickupDate),
         pickupStartTime: uiTimeToApi(pickupStart),
         pickupEndTime: uiTimeToApi(pickupEnd),
         dietaryInfo: dietaryInfo.trim() || undefined,
         allergenInfo: allergenInfo.trim() || undefined,
+        items: toOfferItemsPayload(items),
         category: category ?? undefined,
         imageUrl,
       });
@@ -282,9 +292,17 @@ export default function CreateOfferScreen({ navigation }: Props) {
           </StackedRow>
         </FormCard>
 
+        {/* CONTENTS (optional) */}
+        <SectionLabel title={t('vendor.offer.contents')} />
+        <OfferItemsEditor
+          items={items}
+          onChange={setItems}
+          onManageProducts={() => navigation.navigate('VendorProducts')}
+        />
+
         {/* PRICING */}
         <SectionLabel title={t('vendor.offer.pricing')} />
-        <FormCard error={priceError}>
+        <FormCard error={priceError || quantityError}>
           <InlineRow label={t('vendor.offer.fieldOurPrice')} required>
             <TextInput
               value={price}
@@ -321,7 +339,12 @@ export default function CreateOfferScreen({ navigation }: Props) {
               onChangeText={setQuantity}
               placeholder={t('vendor.offer.quantityPlaceholder')}
               placeholderTextColor="#C7C7CC"
-              style={{ flex: 1, fontSize: 15, color: colors.text.primary, textAlign: 'right' }}
+              style={{
+                flex: 1,
+                fontSize: 15,
+                color: quantityError ? colors.error : colors.text.primary,
+                textAlign: 'right',
+              }}
               keyboardType="number-pad"
             />
           </InlineRow>
@@ -331,6 +354,13 @@ export default function CreateOfferScreen({ navigation }: Props) {
             style={{ fontSize: 12, color: colors.error, marginHorizontal: 18, marginTop: 4 }}
           >
             {t('vendor.offer.priceValidation')}
+          </Text>
+        )}
+        {quantityError && (
+          <Text
+            style={{ fontSize: 12, color: colors.error, marginHorizontal: 18, marginTop: 4 }}
+          >
+            {t('vendor.offer.quantityValidation')}
           </Text>
         )}
 

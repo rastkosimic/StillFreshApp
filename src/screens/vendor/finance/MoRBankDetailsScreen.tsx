@@ -1,11 +1,13 @@
 import { Feather } from '@expo/vector-icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentProps } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
+  type LayoutChangeEvent,
   Platform,
   RefreshControl,
   ScrollView,
@@ -17,6 +19,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import BackButton from '@/components/BackButton';
+import HolderNameLinesInput from '@/components/HolderNameLinesInput';
 import { VendorStackScreenProps } from '@/navigation/types';
 import {
   getLocationMoRBankDetails,
@@ -29,52 +32,39 @@ import { colors } from '@/theme/colors';
 import { MoRBankDetails, MoRBankDetailsResponse, PaymentStatus } from '@/types';
 import { handleInactiveAccount, mapChainError } from '@/utils/chainErrors';
 import {
-  DEFAULT_IBAN_COUNTRY,
+  ACCOUNT_NUMBER_INPUT_MAX_LENGTH,
+  EMPTY_HOLDER_NAME_LINES,
   formatAccountNumberInput,
-  formatIbanInput,
-  formatSwiftInput,
-  getIbanCountryCode,
-  getIbanDisplayMaxLength,
-  getIbanRawMaxLength,
-  IBAN_LENGTH_BY_COUNTRY,
-  stripBankFormatting,
+  holderNameLineError,
+  isCompleteAccountInput,
+  joinHolderNameLines,
+  splitHolderName,
   validateAccountNumber,
-  validateIban,
-  validateSwift,
+  type HolderNameLines,
 } from '@/utils/formatBankDetails';
 
 type Props = VendorStackScreenProps<'VendorMoRBankDetails'>;
 
-type FieldKey = 'holderName' | 'bankName' | 'swiftCode' | 'accountNumber' | 'iban';
+type FieldKey = 'holderName' | 'accountNumber';
 
-// Fields the user types into edit mode.
-// accountNumber and iban always start blank — the user must re-enter them;
-// the backend never returns raw values, only masked ones.
+// accountNumber always starts blank — the user must re-enter it;
+// the backend never returns the raw value, only a masked one.
 interface EditForm {
-  holderName: string;
+  holderLines: HolderNameLines;
   accountNumber: string;
-  bankName: string;
-  swiftCode: string;
-  iban: string;
 }
 
 type FieldErrors = Partial<Record<FieldKey, string>>;
 
 const EMPTY_FORM: EditForm = {
-  holderName: '',
+  holderLines: EMPTY_HOLDER_NAME_LINES,
   accountNumber: '',
-  bankName: '',
-  swiftCode: '',
-  iban: '',
 };
 
 function buildEditForm(d: MoRBankDetailsResponse): EditForm {
   return {
-    holderName: d.holderName ?? '',
+    holderLines: splitHolderName(d.holderName ?? '').lines,
     accountNumber: '',
-    bankName: d.bankName ?? '',
-    swiftCode: d.swiftCode ?? '',
-    iban: '',
   };
 }
 
@@ -90,11 +80,50 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
   const [details, setDetails] = useState<MoRBankDetailsResponse | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState<EditForm>(EMPTY_FORM);
+  const [holderOverflow, setHolderOverflow] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const isEditingRef = useRef(false);
+  isEditingRef.current = isEditing;
+  const scrollRef = useRef<ScrollView>(null);
+  const fieldsBlockY = useRef(0);
+  const rowOffsets = useRef<Partial<Record<FieldKey, number>>>({});
+  const focusedField = useRef<FieldKey | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const scrollFieldIntoView = useCallback((key: FieldKey) => {
+    const rowY = rowOffsets.current[key];
+    if (rowY == null) return;
+    scrollRef.current?.scrollTo({
+      y: Math.max(0, fieldsBlockY.current + rowY - 12),
+      animated: true,
+    });
+  }, []);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+      const key = focusedField.current;
+      if (key) {
+        setTimeout(() => scrollFieldIntoView(key), 80);
+      }
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [scrollFieldIntoView]);
+
+  const onFieldFocus = (key: FieldKey) => {
+    focusedField.current = key;
+    setTimeout(() => scrollFieldIntoView(key), keyboardHeight > 0 ? 50 : 280);
+  };
 
   const clearFieldError = (key: FieldKey) =>
     setFieldErrors((prev) => {
@@ -109,7 +138,7 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
 
   const loadData = useCallback(
     async (silent = false) => {
-      if (!silent) setIsLoading(true);
+      if (!silent && !isEditingRef.current) setIsLoading(true);
       try {
         if (isLocationScoped && locationId != null) {
           // Location-scoped: payment/status describes the signed-in account, not the target.
@@ -117,10 +146,12 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
           const d = await getLocationMoRBankDetails(locationId);
           setPaymentStatus(null);
           setDetails(d);
+          if (isEditingRef.current) return;
           if (d.hasBankDetails) {
             setIsEditing(false);
           } else {
             setForm(EMPTY_FORM);
+            setHolderOverflow(false);
             setFieldErrors({});
             setIsEditing(true);
           }
@@ -139,24 +170,29 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
         if (detailsResult.status === 'fulfilled') {
           const d = detailsResult.value;
           setDetails(d);
+          if (isEditingRef.current) return;
           if (d.hasBankDetails) {
             setIsEditing(false);
           } else {
             setForm(EMPTY_FORM);
+            setHolderOverflow(false);
             setFieldErrors({});
             setIsEditing(true);
           }
-        } else {
+        } else if (!isEditingRef.current) {
           setDetails(null);
           setForm(EMPTY_FORM);
+          setHolderOverflow(false);
           setFieldErrors({});
           setIsEditing(true);
         }
       } catch (error) {
         if (await handleInactiveAccount(error)) return;
+        if (isEditingRef.current) return;
         const mapped = mapChainError(error);
         setDetails(null);
         setForm(EMPTY_FORM);
+        setHolderOverflow(false);
         setFieldErrors({});
         setIsEditing(true);
         Alert.alert(t('common.error'), t(mapped.key, { defaultValue: mapped.raw }));
@@ -179,20 +215,15 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
     setIsRefreshing(false);
   }, [loadData]);
 
-  const set = (key: keyof EditForm, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    clearFieldError(key);
-  };
-
+  const parsedAccount = validateAccountNumber(form.accountNumber);
   const isValid =
-    form.holderName.trim() !== '' &&
-    form.accountNumber.trim() !== '' &&
-    form.bankName.trim() !== '';
+    holderNameLineError(form.holderLines) === null && !holderOverflow && parsedAccount.ok;
 
   const canSave = isValid && !isSubmitting;
 
   const enterEditMode = () => {
     setForm(details?.hasBankDetails ? buildEditForm(details) : EMPTY_FORM);
+    setHolderOverflow(false);
     setFieldErrors({});
     setIsEditing(true);
   };
@@ -206,62 +237,46 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
     }
   };
 
-  const buildPayload = (): MoRBankDetails => ({
-    holderName: form.holderName.trim(),
-    accountNumber: form.accountNumber.trim(),
-    bankName: form.bankName.trim(),
-    swiftCode: form.swiftCode.trim()
-      ? stripBankFormatting(form.swiftCode)
-      : undefined,
-    iban: form.iban.trim() ? stripBankFormatting(form.iban) : undefined,
-    payoutMethod: 'BANK',
-  });
+  const buildPayload = (): MoRBankDetails | null => {
+    const account = validateAccountNumber(form.accountNumber);
+    if (!account.ok) return null;
+    return {
+      holderName: joinHolderNameLines(form.holderLines),
+      accountNumber: account.accountNumber,
+      payoutMethod: 'BANK',
+    };
+  };
 
   const onAccountNumberChange = (value: string) => {
-    setForm((prev) => ({ ...prev, accountNumber: formatAccountNumberInput(value) }));
-    clearFieldError('accountNumber');
-  };
-
-  const onSwiftChange = (value: string) => {
-    setForm((prev) => ({ ...prev, swiftCode: formatSwiftInput(value) }));
-    clearFieldError('swiftCode');
-  };
-
-  const onIbanChange = (value: string) => {
-    setForm((prev) => ({ ...prev, iban: formatIbanInput(value) }));
-    clearFieldError('iban');
-  };
-
-  const ibanErrorMessage = (reason: 'format' | 'length' | 'checksum', raw: string): string => {
-    if (reason === 'length') {
-      const country = getIbanCountryCode(raw) ?? DEFAULT_IBAN_COUNTRY;
-      const length = IBAN_LENGTH_BY_COUNTRY[country] ?? getIbanRawMaxLength(raw);
-      return t('payment.ibanLengthInvalid', { length, country });
+    const formatted = formatAccountNumberInput(value);
+    setForm((prev) => ({ ...prev, accountNumber: formatted }));
+    const parsed = validateAccountNumber(formatted);
+    if (parsed.ok || !isCompleteAccountInput(formatted)) {
+      clearFieldError('accountNumber');
+      return;
     }
-    if (reason === 'checksum') return t('payment.ibanChecksumInvalid');
-    return t('payment.ibanFormatInvalid');
+    setFieldError(
+      'accountNumber',
+      parsed.reason === 'checksum'
+        ? t('payment.accountNumberChecksumInvalid')
+        : t('payment.accountNumberInvalid'),
+    );
   };
 
-  const swiftErrorMessage = (reason: 'length' | 'format'): string => {
-    if (reason === 'length') return t('payment.swiftLengthInvalid');
-    return t('payment.swiftFormatInvalid');
-  };
-
-  const validateHolderName = (value: string = form.holderName): boolean => {
-    if (value.trim()) {
+  const validateHolderName = (lines: HolderNameLines = form.holderLines): boolean => {
+    if (holderOverflow) {
+      setFieldError('holderName', t('payment.holderNameTooLong'));
+      return false;
+    }
+    const reason = holderNameLineError(lines);
+    if (reason === null) {
       clearFieldError('holderName');
       return true;
     }
-    setFieldError('holderName', t('payment.fieldRequired'));
-    return false;
-  };
-
-  const validateBankName = (value: string = form.bankName): boolean => {
-    if (value.trim()) {
-      clearFieldError('bankName');
-      return true;
-    }
-    setFieldError('bankName', t('payment.fieldRequired'));
+    setFieldError(
+      'holderName',
+      reason === 'gap' ? t('payment.holderNameGap') : t('payment.fieldRequired'),
+    );
     return false;
   };
 
@@ -273,77 +288,39 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
     }
     setFieldError(
       'accountNumber',
-      result.reason === 'empty' ? t('payment.fieldRequired') : t('payment.accountNumberInvalid'),
+      result.reason === 'empty'
+        ? t('payment.fieldRequired')
+        : result.reason === 'checksum'
+          ? t('payment.accountNumberChecksumInvalid')
+          : t('payment.accountNumberInvalid'),
     );
-    return false;
-  };
-
-  /** SWIFT is optional; when present it must be exactly 8 or 11 chars and match BIC format. */
-  const validateSwiftField = (value: string = form.swiftCode): boolean => {
-    if (!value.trim()) {
-      clearFieldError('swiftCode');
-      return true;
-    }
-    const result = validateSwift(value);
-    if (result.ok) {
-      clearFieldError('swiftCode');
-      return true;
-    }
-    if (result.reason === 'empty') {
-      clearFieldError('swiftCode');
-      return true;
-    }
-    setFieldError('swiftCode', swiftErrorMessage(result.reason));
-    return false;
-  };
-
-  /** IBAN is optional when account number is present. */
-  const validateIbanField = (value: string = form.iban): boolean => {
-    if (!value.trim()) {
-      clearFieldError('iban');
-      return true;
-    }
-    const result = validateIban(value);
-    if (result.ok) {
-      clearFieldError('iban');
-      return true;
-    }
-    if (result.reason === 'empty') {
-      clearFieldError('iban');
-      return true;
-    }
-    setFieldError('iban', ibanErrorMessage(result.reason, value));
     return false;
   };
 
   const validateAllFields = (): boolean => {
     const holderOk = validateHolderName();
-    const bankOk = validateBankName();
     const accountOk = validateAccountField();
-    const swiftOk = validateSwiftField();
-    const ibanOk = validateIbanField();
-    return holderOk && bankOk && accountOk && swiftOk && ibanOk;
+    return holderOk && accountOk;
   };
 
-  const persist = async () => {
+  const persist = async (): Promise<boolean> => {
     const payload = buildPayload();
+    if (!payload) return false;
     if (isLocationScoped && locationId != null) {
       await saveLocationMoRBankDetails(locationId, payload);
     } else {
       await saveMoRBankDetails(payload);
     }
+    return true;
   };
 
   const applyServerFieldError = (mapped: ReturnType<typeof mapChainError>) => {
     const message = t(mapped.key, { defaultValue: mapped.raw });
-    if (mapped.field === 'iban') setFieldError('iban', message);
-    else if (mapped.field === 'swift') setFieldError('swiftCode', message);
-    else if (mapped.field === 'accountNumber') setFieldError('accountNumber', message);
-    else if (mapped.field === 'holderName') setFieldError('holderName', message);
-    else if (mapped.field === 'bankName') setFieldError('bankName', message);
-    else if (/swift|bic/i.test(mapped.raw)) setFieldError('swiftCode', message);
-    else if (/iban/i.test(mapped.raw)) setFieldError('iban', message);
-    else if (/account/i.test(mapped.raw)) setFieldError('accountNumber', message);
+    if (mapped.field === 'accountNumber' || /account/i.test(mapped.raw)) {
+      setFieldError('accountNumber', message);
+    } else if (mapped.field === 'holderName') {
+      setFieldError('holderName', message);
+    }
   };
 
   const onSave = () => {
@@ -356,16 +333,13 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
     const run = async () => {
       setIsSubmitting(true);
       try {
-        await persist();
+        const saved = await persist();
+        if (!saved) return;
         Alert.alert(t('common.success'), t('payment.morSaveSuccess'), [
           {
             text: t('common.ok'),
             onPress: () => {
-              if (isLocationScoped) {
-                navigation.goBack();
-              } else {
-                void loadData(true);
-              }
+              navigation.navigate('VendorTabs', { screen: 'VendorDashboard' });
             },
           },
         ]);
@@ -407,10 +381,7 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
       ? colors.warning
       : colors.text.secondary;
 
-  const ibanMaxLength = getIbanDisplayMaxLength(form.iban);
-  const expectedIbanLength =
-    IBAN_LENGTH_BY_COUNTRY[getIbanCountryCode(form.iban) ?? DEFAULT_IBAN_COUNTRY] ??
-    getIbanRawMaxLength(form.iban);
+  const accountHint = t('payment.accountNumberHint');
 
   if (isLoading) {
     return (
@@ -423,7 +394,7 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-background"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View
         className="bg-background border-b border-border px-5 pb-3.5 flex-row items-center gap-2.5"
@@ -458,9 +429,13 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        ref={scrollRef}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 32 + (keyboardHeight > 0 ? keyboardHeight : 0),
+        }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         refreshControl={
           !isEditing ? (
             <RefreshControl
@@ -503,10 +478,7 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
             {(
               [
                 { label: t('payment.holderName'), value: details.holderName },
-                { label: t('payment.bankName'), value: details.bankName },
-                { label: t('payment.swiftCode'), value: details.swiftCode },
                 { label: t('payment.accountNumber'), value: details.accountNumberMasked },
-                { label: 'IBAN', value: details.ibanMasked },
               ] as { label: string; value: string | undefined }[]
             )
               .filter((row) => row.value)
@@ -545,102 +517,55 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
               </View>
             )}
 
-            <View className="mt-4 bg-surface border-y border-border">
-              <FieldRow
-                label={`${t('payment.holderName')} *`}
-                error={fieldErrors.holderName}
+            <View
+              className="mt-4 bg-surface border-y border-border"
+              onLayout={(event) => {
+                fieldsBlockY.current = event.nativeEvent.layout.y;
+              }}
+            >
+              <View
+                className="px-4 py-2.5 border-b border-border"
+                onLayout={(event) => {
+                  rowOffsets.current.holderName = event.nativeEvent.layout.y;
+                }}
               >
-                <TextInput
-                  className="text-[15px] flex-1 py-0"
-                  style={{ color: colors.text.primary }}
-                  value={form.holderName}
-                  onChangeText={(v) => set('holderName', v)}
-                  onBlur={() => validateHolderName()}
-                  placeholder={t('payment.holderName')}
-                  placeholderTextColor={colors.text.secondary}
-                  autoCapitalize="words"
-                  returnKeyType="next"
+                <HolderNameLinesInput
+                  lines={form.holderLines}
+                  error={fieldErrors.holderName}
+                  onFocus={() => onFieldFocus('holderName')}
+                  onChange={(lines, overflow) => {
+                    setForm((prev) => ({ ...prev, holderLines: lines }));
+                    setHolderOverflow(overflow);
+                    if (overflow) {
+                      setFieldError('holderName', t('payment.holderNameTooLong'));
+                      return;
+                    }
+                    if (holderNameLineError(lines) === 'gap') {
+                      setFieldError('holderName', t('payment.holderNameGap'));
+                      return;
+                    }
+                    clearFieldError('holderName');
+                  }}
                 />
-              </FieldRow>
-              <FieldRow label={`${t('payment.bankName')} *`} error={fieldErrors.bankName}>
-                <TextInput
-                  className="text-[15px] flex-1 py-0"
-                  style={{ color: colors.text.primary }}
-                  value={form.bankName}
-                  onChangeText={(v) => set('bankName', v)}
-                  onBlur={() => validateBankName()}
-                  placeholder={t('payment.bankName')}
-                  placeholderTextColor={colors.text.secondary}
-                  autoCapitalize="words"
-                  returnKeyType="next"
-                />
-              </FieldRow>
-              <FieldRow
-                label={t('payment.swiftCode')}
-                error={fieldErrors.swiftCode}
-                hint={fieldErrors.swiftCode ? undefined : t('payment.swiftHint')}
-              >
-                <TextInput
-                  className="text-[15px] flex-1 py-0"
-                  style={{ color: colors.text.primary }}
-                  value={form.swiftCode}
-                  onChangeText={onSwiftChange}
-                  onBlur={() => validateSwiftField()}
-                  placeholder="RZBSRSBG"
-                  placeholderTextColor={colors.text.secondary}
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  maxLength={11}
-                  returnKeyType="next"
-                />
-              </FieldRow>
+              </View>
               <FieldRow
                 label={`${t('payment.accountNumber')} *`}
+                isLast
                 error={fieldErrors.accountNumber}
-                hint={fieldErrors.accountNumber ? undefined : t('payment.accountNumberHint')}
+                hint={fieldErrors.accountNumber ? undefined : accountHint}
+                onLayout={(event) => {
+                  rowOffsets.current.accountNumber = event.nativeEvent.layout.y;
+                }}
               >
-                <TextInput
-                  className="text-[15px] flex-1 py-0"
-                  style={{ color: colors.text.primary }}
+                <BankFieldInput
                   value={form.accountNumber}
                   onChangeText={onAccountNumberChange}
+                  onFocus={() => onFieldFocus('accountNumber')}
                   onBlur={() => validateAccountField()}
-                  placeholder={
-                    details?.hasBankDetails
-                      ? details.accountNumberMasked ?? '000-00000000-00'
-                      : '000-00000000-00'
-                  }
-                  placeholderTextColor={colors.text.secondary}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={34}
-                  returnKeyType="next"
-                />
-              </FieldRow>
-              <FieldRow
-                label="IBAN"
-                isLast
-                error={fieldErrors.iban}
-                hint={
-                  fieldErrors.iban
-                    ? undefined
-                    : t('payment.ibanOptionalHint', { length: expectedIbanLength })
-                }
-              >
-                <TextInput
-                  className="text-[15px] flex-1 py-0"
-                  style={{ color: colors.text.primary }}
-                  value={form.iban}
-                  onChangeText={onIbanChange}
-                  onBlur={() => validateIbanField()}
-                  placeholder={
-                    details?.hasBankDetails ? details.ibanMasked ?? 'RS35 2600 ...' : 'RS35 2600 ...'
-                  }
-                  placeholderTextColor={colors.text.secondary}
+                  placeholder="160-0000000380290-23"
                   autoCapitalize="characters"
                   autoCorrect={false}
-                  maxLength={ibanMaxLength}
+                  maxLength={ACCOUNT_NUMBER_INPUT_MAX_LENGTH}
                   returnKeyType="done"
                   onSubmitEditing={canSave ? onSave : undefined}
                 />
@@ -695,24 +620,48 @@ export default function MoRBankDetailsScreen({ navigation, route }: Props) {
   );
 }
 
+function BankFieldInput(props: ComponentProps<typeof TextInput>) {
+  return (
+    <TextInput
+      {...props}
+      placeholderTextColor={colors.text.secondary}
+      style={[
+        {
+          color: colors.text.primary,
+          fontSize: 15,
+          lineHeight: 20,
+          minHeight: 22,
+          paddingVertical: 0,
+          paddingHorizontal: 0,
+          width: '100%',
+        },
+        props.style,
+      ]}
+    />
+  );
+}
+
 function FieldRow({
   label,
   children,
   isLast,
   error,
   hint,
+  onLayout,
 }: {
   label: string;
   children: React.ReactNode;
   isLast?: boolean;
   error?: string;
   hint?: string;
+  onLayout?: (event: LayoutChangeEvent) => void;
 }) {
   const hasError = Boolean(error);
 
   return (
     <View
       className="px-4 py-2.5"
+      onLayout={onLayout}
       style={{
         borderBottomWidth: isLast ? 0 : 1,
         borderBottomColor: colors.border,

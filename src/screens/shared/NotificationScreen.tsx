@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -28,7 +28,11 @@ import {
 import { OrderNotificationBadge } from '@/utils/resolveNotificationType';
 import { formatRelativeTime } from '@/utils/formatDate';
 import { orderStatusColor } from '@/utils/orderStatus';
-import { getNotificationOrderId, resolveNotificationType } from '@/utils/resolveNotificationType';
+import {
+  getNotificationOrderId,
+  isVendorOrderNotification,
+  resolveNotificationType,
+} from '@/utils/resolveNotificationType';
 
 // ── Type icon config ──────────────────────────────────────────────────────────
 
@@ -49,6 +53,7 @@ const TYPE_ICON: Record<NotificationType, IconConfig> = {
   BANK_TRANSFER_INITIATED: { name: 'swap-horizontal-outline', bg: colors.primary[50], tint: colors.primary.DEFAULT },
   BANK_TRANSFER_CONFIRMED: { name: 'checkmark-circle', bg: colors.primary[100], tint: colors.primary.DEFAULT },
   BANKING_MODEL_CHANGED: { name: 'settings-outline', bg: colors.primary[50], tint: colors.primary.DEFAULT },
+  VENDOR_FEE_CHANGED: { name: 'pricetag-outline', bg: colors.primary[50], tint: colors.primary.DEFAULT },
   SYSTEM_ALERT: { name: 'alert-circle-outline', bg: '#FFF4E5', tint: colors.warning },
 };
 
@@ -93,8 +98,8 @@ function useNotificationNavigation() {
             navigation.navigate('VendorBankAccounts');
             break;
           case 'BANKING_MODEL_CHANGED':
-            // Only HQ manages the banking model; branches just land on the dashboard.
-            navigation.navigate('VendorTabs', { screen: 'VendorDashboard' });
+          case 'VENDOR_FEE_CHANGED':
+          case 'SYSTEM_ALERT':
             break;
           default:
             navigation.navigate('VendorTabs', { screen: 'VendorDashboard' });
@@ -289,6 +294,51 @@ function EmptyState() {
   );
 }
 
+const PAGE_SIZE = 10;
+
+type VendorInboxFilter = 'all' | 'orders' | 'other';
+
+function VendorInboxPills({
+  value,
+  onChange,
+}: {
+  value: VendorInboxFilter;
+  onChange: (next: VendorInboxFilter) => void;
+}) {
+  const { t } = useTranslation();
+  const options: { id: VendorInboxFilter; labelKey: string }[] = [
+    { id: 'all', labelKey: 'notifications.categoryAll' },
+    { id: 'orders', labelKey: 'notifications.categoryOrders' },
+    { id: 'other', labelKey: 'notifications.categoryOther' },
+  ];
+
+  return (
+    <View className="flex-row px-4 py-3 gap-2">
+      {options.map((option) => {
+        const active = value === option.id;
+        return (
+          <TouchableOpacity
+            key={option.id}
+            onPress={() => onChange(option.id)}
+            activeOpacity={0.8}
+            className={`rounded-full px-4 py-1.5 ${
+              active ? 'bg-primary' : 'bg-surface border border-border'
+            }`}
+          >
+            <Text
+              className={`text-sm font-semibold ${
+                active ? 'text-white' : 'text-text-primary'
+              }`}
+            >
+              {t(option.labelKey)}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function NotificationScreen() {
@@ -305,10 +355,26 @@ export default function NotificationScreen() {
 
   const routeToNotification = useNotificationNavigation();
   const safeNotifications = Array.isArray(notifications) ? notifications : [];
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [inboxFilter, setInboxFilter] = useState<VendorInboxFilter>('all');
+  const isLoadingMore = useRef(false);
   const isVendor = useAuthStore(
     (s) => s.user?.role === 'VENDOR' || s.user?.role === 'VENDOR_ADMIN',
   );
-  const { statusByOrderId } = useNotificationOrderStatuses(safeNotifications, isVendor);
+  const filteredNotifications = useMemo(() => {
+    if (!isVendor || inboxFilter === 'all') return safeNotifications;
+    return safeNotifications.filter((item) => {
+      const type = resolveNotificationType(item);
+      const isOrder = isVendorOrderNotification(type);
+      return inboxFilter === 'orders' ? isOrder : !isOrder;
+    });
+  }, [safeNotifications, isVendor, inboxFilter]);
+  const visibleNotifications = useMemo(
+    () => filteredNotifications.slice(0, visibleCount),
+    [filteredNotifications, visibleCount],
+  );
+  const hasMore = visibleCount < filteredNotifications.length;
+  const { statusByOrderId } = useNotificationOrderStatuses(visibleNotifications, isVendor);
 
   // Load on focus
   useFocusEffect(
@@ -337,6 +403,26 @@ export default function NotificationScreen() {
     },
     [deleteNotificationItem, t],
   );
+
+  const loadMore = useCallback(() => {
+    if (isLoadingMore.current || !hasMore) return;
+    isLoadingMore.current = true;
+    setVisibleCount((count) => Math.min(count + PAGE_SIZE, filteredNotifications.length));
+  }, [hasMore, filteredNotifications.length]);
+
+  const handleInboxFilter = useCallback((next: VendorInboxFilter) => {
+    setInboxFilter(next);
+    setVisibleCount(PAGE_SIZE);
+  }, []);
+
+  useEffect(() => {
+    isLoadingMore.current = false;
+  }, [visibleCount]);
+
+  const handleRefresh = useCallback(() => {
+    setVisibleCount(PAGE_SIZE);
+    void fetchNotifications();
+  }, [fetchNotifications]);
 
   const handleMarkAll = useCallback(async () => {
     try {
@@ -384,6 +470,10 @@ export default function NotificationScreen() {
         </TouchableOpacity>
       </View>
 
+      {isVendor && (
+        <VendorInboxPills value={inboxFilter} onChange={handleInboxFilter} />
+      )}
+
       {/* Loading */}
       {isLoading && safeNotifications.length === 0 ? (
         <View className="flex-1 items-center justify-center">
@@ -391,8 +481,10 @@ export default function NotificationScreen() {
         </View>
       ) : (
         <FlatList
-          data={safeNotifications}
+          data={visibleNotifications}
           keyExtractor={(item) => item.id}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.3}
           renderItem={({ item }) => {
             const orderId = getNotificationOrderId(item);
             const orderStatus = orderId != null ? statusByOrderId[orderId] : undefined;
@@ -410,13 +502,15 @@ export default function NotificationScreen() {
           refreshControl={
             <RefreshControl
               refreshing={isLoading && safeNotifications.length > 0}
-              onRefresh={fetchNotifications}
+              onRefresh={handleRefresh}
               tintColor={colors.primary.DEFAULT}
               colors={[colors.primary.DEFAULT]}
             />
           }
           contentContainerStyle={
-            safeNotifications.length === 0 ? { flex: 1 } : { paddingBottom: insets.bottom + 16 }
+            filteredNotifications.length === 0
+              ? { flex: 1 }
+              : { paddingBottom: insets.bottom + 16 }
           }
           showsVerticalScrollIndicator={false}
         />

@@ -14,41 +14,11 @@ interface OrderCardProps {
   onPress: () => void;
 }
 
-function VendorAvatar({ uri, size }: { uri?: string; size: number }) {
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        bottom: -(size / 2),
-        left: 10,
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        borderWidth: 2,
-        borderColor: colors.surface,
-        backgroundColor: colors.primary[100],
-        overflow: 'hidden',
-      }}
-    >
-      <AuthImage
-        uri={uri}
-        style={{ width: '100%', height: '100%' }}
-        contentFit="cover"
-        fallback={
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="storefront-outline" size={size * 0.5} color={colors.primary[400]} />
-          </View>
-        }
-      />
-    </View>
-  );
-}
+const LIST_IMAGE = 112;
 
 export default function OrderCard({ order, onPress }: OrderCardProps) {
   const { t, i18n } = useTranslation();
   const vendorName = order.chainName ?? order.locationName ?? '';
-  const location =
-    order.chainName && order.locationName ? order.locationName : (order.address ?? '');
   const currency = order.currency ?? 'RSD';
   const statusColor = orderStatusColor(order.status);
   const pickupSchedule = formatVendorPickupSchedule(order, i18n.language);
@@ -58,7 +28,7 @@ export default function OrderCard({ order, onPress }: OrderCardProps) {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
-      className="bg-surface rounded-[14px] overflow-hidden w-full"
+      className="bg-surface rounded-[14px] overflow-hidden w-full flex-row"
       style={{
         opacity: isInactive ? 0.55 : 1,
         shadowColor: '#000',
@@ -68,54 +38,49 @@ export default function OrderCard({ order, onPress }: OrderCardProps) {
         elevation: 2,
       }}
     >
-      <View className="w-full h-40 bg-primary-100">
+      <View className="bg-primary-100" style={{ width: LIST_IMAGE, height: LIST_IMAGE }}>
         <AuthImage
           uri={order.offerImageUrl ?? order.vendorImageUrl}
           style={{ width: '100%', height: '100%' }}
           contentFit="cover"
           fallback={
             <View className="flex-1 items-center justify-center">
-              <Ionicons name="bag-handle-outline" size={36} color={colors.primary[400]} />
+              <Ionicons name="bag-handle-outline" size={28} color={colors.primary[400]} />
             </View>
           }
         />
-        <View className="absolute top-2 right-2 rounded-full px-2 py-0.5 bg-surface">
-          <Text className="text-xs font-semibold" style={{ color: statusColor }}>
-            {t(orderStatusI18nKey(order.status))}
-          </Text>
-        </View>
-        <VendorAvatar uri={order.vendorImageUrl} size={64} />
       </View>
 
-      <View className="px-3.5 pt-10 pb-3">
-        {vendorName.length > 0 ? (
-          <Text className="text-primary text-xs font-semibold" numberOfLines={1}>
-            {vendorName}
-          </Text>
-        ) : null}
-        <Text className="text-text-primary text-base font-bold mt-0.5" numberOfLines={1}>
-          {order.offerName ?? t('customer.basket')}
-        </Text>
-
-        {pickupSchedule != null ? (
-          <View className="flex-row items-center mt-1.5" style={{ gap: 6 }}>
-            <Ionicons name="time-outline" size={14} color={colors.text.secondary} />
-            <Text className="text-text-secondary text-xs flex-1" numberOfLines={1}>
-              {pickupSchedule}
-            </Text>
+      <View className="flex-1 px-3 py-2.5 justify-between min-w-0">
+        <View>
+          <View className="flex-row items-start" style={{ gap: 8 }}>
+            <View className="flex-1 min-w-0">
+              {vendorName.length > 0 ? (
+                <Text className="text-primary text-xs font-semibold" numberOfLines={1}>
+                  {vendorName}
+                </Text>
+              ) : null}
+              <Text className="text-text-primary text-sm font-bold mt-0.5" numberOfLines={1}>
+                {order.offerName ?? t('customer.basket')}
+              </Text>
+            </View>
+            <View className="rounded-full px-2 py-0.5 bg-primary-50" style={{ flexShrink: 0 }}>
+              <Text className="text-xs font-semibold" style={{ color: statusColor }}>
+                {t(orderStatusI18nKey(order.status))}
+              </Text>
+            </View>
           </View>
-        ) : null}
 
-        {location.length > 0 ? (
-          <View className="flex-row items-center mt-1" style={{ gap: 6 }}>
-            <Ionicons name="location-outline" size={14} color={colors.text.secondary} />
-            <Text className="text-text-secondary text-xs flex-1" numberOfLines={1}>
-              {location}
-            </Text>
-          </View>
-        ) : null}
+          {pickupSchedule != null ? (
+            <View className="flex-row items-center mt-1.5" style={{ gap: 4 }}>
+              <Ionicons name="time-outline" size={13} color={colors.text.secondary} />
+              <Text className="text-text-secondary text-xs flex-1" numberOfLines={1}>
+                {pickupSchedule}
+              </Text>
+            </View>
+          ) : null}
+        </View>
 
-        <View className="h-px bg-border mt-2.5 mb-2" />
         <Text className="text-base font-extrabold text-primary">
           {formatOrderAmount(order.totalPrice, currency)}
         </Text>
